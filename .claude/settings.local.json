@@ -16,7 +16,8 @@
       "PowerShell(try { $r = Invoke-WebRequest -Uri \"https://api.nusmods.com/v2/2025-2026/semesters/1/CS1010/\" -UseBasicParsing -TimeoutSec 10; Write-Output $r.Content.Substring\\(0, [Math]::Min\\(2000, $r.Content.Length\\)\\) } catch { Write-Output \"Error: $_\" })",
       "PowerShell(python D:\\\\Repo\\\\RoomAvailable\\\\scripts\\\\parse_nusmods.py --year 2025-2026 --output D:\\\\Repo\\\\RoomAvailable\\\\venues_timetable.test.json)",
       "PowerShell(try { $r = Invoke-WebRequest -Uri \"https://api.nusmods.com/v2/2025-2026/modules/CS1010.json\" -UseBasicParsing -TimeoutSec 15; $data = $r.Content | ConvertFrom-Json; $data.semesterData[0].timetable | Select-Object venue, day, startTime, endTime, lessonType, weeks | Format-Table -AutoSize } catch { Write-Output \"Error: $_\" })",
-      "PowerShell(python D:\\\\Repo\\\\RoomAvailable\\\\scripts\\\\parse_nusmods.py --year 2025-2026)"
+      "PowerShell(python D:\\\\Repo\\\\RoomAvailable\\\\scripts\\\\parse_nusmods.py --year 2025-2026)",
+      "Bash(npx create-next-app@latest *)"
     ]
   }
 }

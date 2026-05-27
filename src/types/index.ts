@@ -1,0 +1,62 @@
+export interface TimetableSlot {
+  start: string;
+  end: string;
+  module: string;
+  title: string;
+  type: string;
+  semester: number;
+  weeks: number[];
+}
+
+export interface VenueDaySchedule {
+  [day: string]: TimetableSlot[];
+}
+
+export interface VenueEntry {
+  cluster: string;
+  Monday?: TimetableSlot[];
+  Tuesday?: TimetableSlot[];
+  Wednesday?: TimetableSlot[];
+  Thursday?: TimetableSlot[];
+  Friday?: TimetableSlot[];
+  Saturday?: TimetableSlot[];
+}
+
+export type OccupancyStatus = "vacant" | "occupied" | "crunch";
+
+export interface OccupancyInfo {
+  status: OccupancyStatus;
+  currentModule?: string;
+  currentTitle?: string;
+  currentType?: string;
+  until?: string;
+  nextClass?: { start: string; module: string; title: string };
+}
+
+export interface VenueMatrix {
+  _meta: {
+    generated_at: string;
+    academic_year: string;
+    venue_count: number;
+    module_count: number;
+  };
+  _calendar: Record<
+    string,
+    Record<string, { start: string; end: string }>
+  >;
+  [venue: string]: VenueEntry | any;
+}
+
+export interface ClusterInfo {
+  id: string;
+  label: string;
+  lat: number;
+  lng: number;
+}
+
+export interface CalendarEntry {
+  semester: number;
+  start: string;
+  end: string;
+  academicYear: string;
+}

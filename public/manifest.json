@@ -1,0 +1,18 @@
+{
+  "name": "NUS SpaceFinder",
+  "short_name": "SpaceFinder",
+  "description": "Find available rooms on NUS campus in real time.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4F6F9",
+  "theme_color": "#003D7C",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
