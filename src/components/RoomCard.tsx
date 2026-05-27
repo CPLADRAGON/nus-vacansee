@@ -10,9 +10,10 @@ interface Props {
   entry: VenueEntry;
   now: Date;
   semester: CalendarEntry | null;
+  onSelect: (venue: string, entry: VenueEntry) => void;
 }
 
-export default function RoomCard({ venue, entry, now, semester }: Props) {
+export default function RoomCard({ venue, entry, now, semester, onSelect }: Props) {
   const occupancy = useMemo(
     () => computeOccupancy(entry, now, semester),
     [entry, now, semester]
@@ -21,7 +22,10 @@ export default function RoomCard({ venue, entry, now, semester }: Props) {
   const isOccupied = occupancy.status === "occupied" || occupancy.status === "crunch";
 
   return (
-    <div className="glass p-4 transition-transform duration-200 hover:scale-[1.02]">
+    <button
+      onClick={() => onSelect(venue, entry)}
+      className="glass w-full p-4 text-left transition-transform duration-200 hover:scale-[1.02] cursor-pointer"
+    >
       <div className="mb-2 flex items-start justify-between">
         <span className="font-mono text-xl font-bold tracking-tight text-nus-blue">
           {venue}
@@ -35,15 +39,9 @@ export default function RoomCard({ venue, entry, now, semester }: Props) {
         <StatusBadge info={occupancy} />
       </div>
 
-      {isOccupied && occupancy.currentTitle && (
+      {isOccupied && (
         <p className="text-sm text-zinc-700">
-          <span className="font-medium">{occupancy.currentModule}</span>{" "}
-          {occupancy.currentTitle}
-          {occupancy.currentType && (
-            <span className="ml-1 text-xs text-zinc-400">
-              ({occupancy.currentType})
-            </span>
-          )}
+          <span className="font-medium">{occupancy.currentModule}</span>
         </p>
       )}
 
@@ -63,6 +61,6 @@ export default function RoomCard({ venue, entry, now, semester }: Props) {
       {occupancy.status === "vacant" && !occupancy.nextClass && (
         <p className="text-xs text-zinc-300">Free rest of day</p>
       )}
-    </div>
+    </button>
   );
 }

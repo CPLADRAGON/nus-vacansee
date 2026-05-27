@@ -8,6 +8,7 @@ interface Props {
   now: Date;
   semester: CalendarEntry | null;
   emptyMessage?: string;
+  onVenueSelect: (venue: string, entry: VenueEntry) => void;
 }
 
 export default function RoomGrid({
@@ -15,6 +16,7 @@ export default function RoomGrid({
   now,
   semester,
   emptyMessage,
+  onVenueSelect,
 }: Props) {
   if (venues.length === 0) {
     return (
@@ -35,6 +37,7 @@ export default function RoomGrid({
           entry={entry}
           now={now}
           semester={semester}
+          onSelect={onVenueSelect}
         />
       ))}
     </div>

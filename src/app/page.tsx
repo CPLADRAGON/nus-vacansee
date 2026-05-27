@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import type { VenueEntry } from "@/types";
 import { useVenueData } from "@/hooks/useVenueData";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { getSingaporeTime } from "@/lib/occupancy-engine";
@@ -8,6 +9,7 @@ import { getCurrentSemester } from "@/lib/calendar";
 import { findNearestCluster } from "@/lib/cluster-map";
 import LocationPrompt from "@/components/LocationPrompt";
 import RoomGrid from "@/components/RoomGrid";
+import VenueDetail from "@/components/VenueDetail";
 
 export default function Home() {
   const { data, venues, loading, error } = useVenueData();
@@ -16,6 +18,7 @@ export default function Home() {
   const [now, setNow] = useState<Date>(() => getSingaporeTime());
   const [cluster, setCluster] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [detailVenue, setDetailVenue] = useState<[string, VenueEntry] | null>(null);
 
   // Live clock tick
   useEffect(() => {
@@ -54,16 +57,13 @@ export default function Home() {
       result = result.filter(([code]) => code.toUpperCase().includes(q));
     }
 
-    // Sort: vacant first, then by code
+    // Sort: fewer today-slots first (likely vacant), then by code
     if (semester) {
       const nowSort = now;
       result = [...result].sort((a, b) => {
-        const occA = a[1]; // VenueEntry
-        const occB = b[1];
-        // Simple heuristic: venues with fewer today-slots → more likely vacant
         const dayName = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][nowSort.getDay()];
-        const slotsA = ((occA as any)[dayName]?.length ?? 0);
-        const slotsB = ((occB as any)[dayName]?.length ?? 0);
+        const slotsA = ((a[1] as any)[dayName]?.length ?? 0);
+        const slotsB = ((b[1] as any)[dayName]?.length ?? 0);
         return slotsA - slotsB || a[0].localeCompare(b[0]);
       });
     }
@@ -118,6 +118,14 @@ export default function Home() {
         {/* Main UI (loaded) */}
         {!loading && !error && (
           <>
+            {/* Semester gap banner */}
+            {!semester && (
+              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                Currently between semesters. Timetable data may not reflect
+                special term or exam bookings.
+              </div>
+            )}
+
             <LocationPrompt
               allVenues={venues}
               activeCluster={cluster}
@@ -154,6 +162,7 @@ export default function Home() {
                     now={now}
                     semester={semester}
                     emptyMessage="No rooms match your search."
+                    onVenueSelect={(v, e) => setDetailVenue([v, e])}
                   />
                 </>
               )}
@@ -175,6 +184,17 @@ export default function Home() {
         </a>
         . Updated daily.
       </footer>
+
+      {/* Venue detail modal */}
+      {detailVenue && (
+        <VenueDetail
+          venue={detailVenue[0]}
+          entry={detailVenue[1]}
+          now={now}
+          semester={semester}
+          onClose={() => setDetailVenue(null)}
+        />
+      )}
     </>
   );
 }

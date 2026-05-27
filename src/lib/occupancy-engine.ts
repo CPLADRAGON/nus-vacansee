@@ -53,8 +53,6 @@ export function computeOccupancy(
       return {
         status,
         currentModule: slot.module,
-        currentTitle: slot.title,
-        currentType: slot.type,
         until: slot.end,
       };
     }
@@ -65,7 +63,7 @@ export function computeOccupancy(
   return {
     status: "vacant",
     nextClass: nextClass
-      ? { start: nextClass.start, module: nextClass.module, title: nextClass.title }
+      ? { start: nextClass.start, module: nextClass.module }
       : undefined,
   };
 }

@@ -178,7 +178,6 @@ def process_timetable(module_data: dict, stats: dict) -> list[dict]:
     """Extract venue timetable slots from a module's semesterData."""
     slots: list[dict] = []
     module_code = module_data.get("moduleCode", "")
-    module_title = module_data.get("title", "")
     sem_data = module_data.get("semesterData", [])
 
     for sem_entry in sem_data:
@@ -215,8 +214,6 @@ def process_timetable(module_data: dict, stats: dict) -> list[dict]:
                 "start": start_time,
                 "end": end_time,
                 "module": module_code,
-                "title": module_title,
-                "type": (entry.get("lessonType") or "").strip(),
                 "semester": semester,
                 "weeks": clean_weeks,
             })

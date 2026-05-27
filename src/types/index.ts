@@ -2,8 +2,6 @@ export interface TimetableSlot {
   start: string;
   end: string;
   module: string;
-  title: string;
-  type: string;
   semester: number;
   weeks: number[];
 }
@@ -27,10 +25,8 @@ export type OccupancyStatus = "vacant" | "occupied" | "crunch";
 export interface OccupancyInfo {
   status: OccupancyStatus;
   currentModule?: string;
-  currentTitle?: string;
-  currentType?: string;
   until?: string;
-  nextClass?: { start: string; module: string; title: string };
+  nextClass?: { start: string; module: string };
 }
 
 export interface VenueMatrix {
