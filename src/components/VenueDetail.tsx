@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import type { VenueEntry, CalendarEntry } from "@/types";
 import { computeOccupancy, formatTime } from "@/lib/occupancy-engine";
 import { getCurrentWeek } from "@/lib/calendar";
+import { getDestination, mapsUrl } from "@/lib/directions";
 import StatusBadge from "./StatusBadge";
 import WeekGrid from "./WeekGrid";
 
@@ -22,6 +23,7 @@ export default function VenueDetail({ venue, entry, now, semester, onClose }: Pr
   );
 
   const currentWeek = semester ? getCurrentWeek(semester.start) : null;
+  const dest = getDestination(venue, entry.cluster);
 
   return (
     <div
@@ -79,6 +81,28 @@ export default function VenueDetail({ venue, entry, now, semester, onClose }: Pr
             {occupancy.currentModule} · ends {formatTime(occupancy.until)}
           </p>
         )}
+
+        {/* Directions */}
+        <div className="mb-4 flex items-center gap-2">
+          <a
+            href={mapsUrl(dest)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-lg bg-nus-blue px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-nus-blue/90 active:scale-[0.98]"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M12 21s-7-6.5-7-11a7 7 0 1114 0c0 4.5-7 11-7 11z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
+              <circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="2" />
+            </svg>
+            Directions
+          </a>
+          <span className="text-xs text-zinc-400">{dest.label}</span>
+        </div>
 
         {/* Weekly timetable */}
         <div className="mb-1 flex items-center justify-between">
