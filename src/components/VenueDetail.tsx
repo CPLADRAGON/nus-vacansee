@@ -5,6 +5,7 @@ import type { VenueEntry, CalendarEntry } from "@/types";
 import { computeOccupancy, formatTime } from "@/lib/occupancy-engine";
 import { getCurrentWeek } from "@/lib/calendar";
 import StatusBadge from "./StatusBadge";
+import WeekGrid from "./WeekGrid";
 
 interface Props {
   venue: string;
@@ -14,10 +15,6 @@ interface Props {
   onClose: () => void;
 }
 
-const DAYS = [
-  "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
-];
-
 export default function VenueDetail({ venue, entry, now, semester, onClose }: Props) {
   const occupancy = useMemo(
     () => computeOccupancy(entry, now, semester),
@@ -25,7 +22,6 @@ export default function VenueDetail({ venue, entry, now, semester, onClose }: Pr
   );
 
   const currentWeek = semester ? getCurrentWeek(semester.start) : null;
-  const todayName = DAYS[now.getDay() === 0 ? 6 : now.getDay() - 1];
 
   return (
     <div
@@ -33,7 +29,7 @@ export default function VenueDetail({ venue, entry, now, semester, onClose }: Pr
       onClick={onClose}
     >
       <div
-        className="glass w-full max-w-lg rounded-t-2xl sm:rounded-2xl max-h-[80vh] overflow-y-auto p-5"
+        className="glass w-full max-w-lg rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-y-auto p-5"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -55,7 +51,7 @@ export default function VenueDetail({ venue, entry, now, semester, onClose }: Pr
         </div>
 
         {/* Current status */}
-        <div className="mb-4">
+        <div className="mb-2">
           <StatusBadge info={occupancy} />
         </div>
         {occupancy.status === "vacant" && occupancy.nextClass && (
@@ -64,124 +60,31 @@ export default function VenueDetail({ venue, entry, now, semester, onClose }: Pr
             {formatTime(occupancy.nextClass.start)}
           </p>
         )}
+        {occupancy.status !== "vacant" && occupancy.until && (
+          <p className="mb-4 text-sm text-zinc-500">
+            {occupancy.currentModule} · ends {formatTime(occupancy.until)}
+          </p>
+        )}
 
-        {/* Today's schedule */}
-        <div className="mb-4">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            {todayName} Schedule
+        {/* Weekly timetable */}
+        <div className="mb-1 flex items-center justify-between">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            Weekly Timetable
           </h3>
           {semester ? (
-            <TodaySchedule
-              entry={entry}
-              dayName={todayName}
-              currentWeek={currentWeek}
-              semester={semester.semester}
-            />
+            <span className="rounded-full bg-nus-blue/10 px-2 py-0.5 text-[10px] font-medium text-nus-blue">
+              Week {currentWeek}
+            </span>
           ) : (
-            <p className="text-sm text-zinc-400">No active semester.</p>
+            <span className="text-[10px] text-amber-600">Between semesters</span>
           )}
         </div>
+        <p className="mb-3 text-[11px] text-zinc-400">
+          Blue = booked · empty = free. Tap a class for details.
+        </p>
 
-        {/* Full week toggle could go here */}
-        <details className="group">
-          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-zinc-400 hover:text-zinc-600">
-            Full Week
-          </summary>
-          <div className="mt-3 space-y-3">
-            {DAYS.map((day) => {
-              const slots = (entry as any)[day];
-              if (!slots || slots.length === 0) return null;
-              const filtered = semester
-                ? slots.filter((s: any) => s.semester === semester.semester && s.weeks.includes(currentWeek))
-                : [];
-              if (filtered.length === 0) return null;
-              return (
-                <div key={day}>
-                  <h4 className="mb-1 text-xs font-medium text-zinc-500">{day}</h4>
-                  <div className="space-y-1">
-                    {filtered.map((s: any, i: number) => (
-                      <div
-                        key={i}
-                        className="flex items-center gap-2 rounded bg-white/50 px-3 py-1.5 text-xs"
-                      >
-                        <span className="font-mono text-zinc-600">
-                          {formatTime(s.start)}–{formatTime(s.end)}
-                        </span>
-                        <span className="font-mono font-medium text-nus-blue">
-                          {s.module}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </details>
+        <WeekGrid entry={entry} now={now} semester={semester} />
       </div>
-    </div>
-  );
-}
-
-function TodaySchedule({
-  entry,
-  dayName,
-  currentWeek,
-  semester,
-}: {
-  entry: VenueEntry;
-  dayName: string;
-  currentWeek: number | null;
-  semester: number;
-}) {
-  const allSlots = (entry as any)[dayName] as
-    | { start: string; end: string; module: string; semester: number; weeks: number[] }[]
-    | undefined;
-
-  if (!allSlots || allSlots.length === 0) {
-    return <p className="text-sm text-zinc-400">No classes scheduled.</p>;
-  }
-
-  // Show slots matching this semester and week
-  const relevant = allSlots.filter(
-    (s) => s.semester === semester && (currentWeek ? s.weeks.includes(currentWeek) : true)
-  );
-
-  if (relevant.length === 0) {
-    return <p className="text-sm text-zinc-400">No classes this week.</p>;
-  }
-
-  // Also show "other semester" slots greyed out
-  const other = allSlots.filter((s) => s.semester !== semester);
-  const showOther = other.length > 0 && relevant.length > 0;
-
-  return (
-    <div className="space-y-1">
-      {relevant.map((s, i) => (
-        <div
-          key={i}
-          className="flex items-center gap-2 rounded bg-nus-blue/5 px-3 py-1.5 text-xs"
-        >
-          <span className="font-mono text-zinc-600">
-            {formatTime(s.start)}–{formatTime(s.end)}
-          </span>
-          <span className="font-mono font-medium text-nus-blue">{s.module}</span>
-        </div>
-      ))}
-      {showOther && (
-        <>
-          <p className="pt-1 text-[10px] text-zinc-300">Other semester:</p>
-          {other.slice(0, 3).map((s, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-2 rounded px-3 py-1 text-xs text-zinc-300"
-            >
-              <span className="font-mono">{formatTime(s.start)}–{formatTime(s.end)}</span>
-              <span className="font-mono">{s.module}</span>
-            </div>
-          ))}
-        </>
-      )}
     </div>
   );
 }
