@@ -20,9 +20,29 @@ export function formatTime(hhmm: string): string {
   return `${hr}:${m} ${ampm}`;
 }
 
+export function formatDuration(mins: number): string {
+  if (mins <= 0) return "0m";
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
 function isCrunchHour(time: string): boolean {
   const t = parseInt(time, 10);
   return t >= 1200 && t <= 1400;
+}
+
+// Campus operating-day end used to bound an open-ended vacancy block.
+const DAY_END = "2200";
+
+function minutesBetween(fromHHMM: string, toHHMM: string): number {
+  const fh = parseInt(fromHHMM.slice(0, 2), 10);
+  const fm = parseInt(fromHHMM.slice(2), 10);
+  const th = parseInt(toHHMM.slice(0, 2), 10);
+  const tm = parseInt(toHHMM.slice(2), 10);
+  return Math.max(0, th * 60 + tm - (fh * 60 + fm));
 }
 
 export function computeOccupancy(
@@ -31,7 +51,7 @@ export function computeOccupancy(
   semester: CalendarEntry | null
 ): OccupancyInfo {
   if (!semester) {
-    return { status: "vacant" };
+    return { status: "vacant", freeUntil: DAY_END };
   }
 
   const dayName = DAY_NAMES[now.getDay()];
@@ -41,11 +61,34 @@ export function computeOccupancy(
   const currentWeek = getCurrentWeek(semester.start);
 
   const slots = (venue as unknown as Record<string, TimetableSlot[] | undefined>)[dayName];
+
+  const buildVacant = (
+    activeSlots: TimetableSlot[]
+  ): OccupancyInfo => {
+    const nextClass = activeSlots
+      .filter((s) => s.start > currentTime)
+      .sort((a, b) => a.start.localeCompare(b.start))[0];
+    const freeUntil = nextClass ? nextClass.start : DAY_END;
+    return {
+      status: "vacant",
+      freeUntil,
+      freeMinutes: minutesBetween(
+        currentTime < DAY_END ? currentTime : DAY_END,
+        freeUntil
+      ),
+      nextClass: nextClass
+        ? { start: nextClass.start, module: nextClass.module }
+        : undefined,
+    };
+  };
+
   if (!slots || slots.length === 0) {
-    return { status: "vacant" };
+    return buildVacant([]);
   }
 
-  const activeSlots = slots.filter((s) => s.weeks.includes(currentWeek));
+  const activeSlots = slots.filter(
+    (s) => s.semester === semester.semester && s.weeks.includes(currentWeek)
+  );
 
   for (const slot of activeSlots) {
     if (currentTime >= slot.start && currentTime < slot.end) {
@@ -58,12 +101,5 @@ export function computeOccupancy(
     }
   }
 
-  const nextClass = activeSlots.find((s) => s.start > currentTime);
-
-  return {
-    status: "vacant",
-    nextClass: nextClass
-      ? { start: nextClass.start, module: nextClass.module }
-      : undefined,
-  };
+  return buildVacant(activeSlots);
 }

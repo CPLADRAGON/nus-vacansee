@@ -27,6 +27,9 @@ export interface OccupancyInfo {
   currentModule?: string;
   until?: string;
   nextClass?: { start: string; module: string };
+  // For vacant rooms: when the free block ends and how long it lasts (minutes).
+  freeUntil?: string;
+  freeMinutes?: number;
 }
 
 export interface VenueMatrix {

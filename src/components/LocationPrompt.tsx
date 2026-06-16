@@ -8,6 +8,8 @@ interface Props {
   allVenues: [string, VenueEntry][];
   activeCluster: string | null;
   searchQuery: string;
+  detectedCluster: string | null;
+  geoError: string | null;
   onClusterSelect: (cluster: string | null) => void;
   onSearchChange: (q: string) => void;
   onAutoDetect: () => void;
@@ -15,17 +17,20 @@ interface Props {
 }
 
 const HARDCODED_PILLS = [
-  { id: null, label: "All" },
+  { id: null, label: "Near me" },
   { id: "Computing", label: "COM" },
   { id: "Engineering", label: "ENG" },
   { id: "UTown", label: "UTown" },
   { id: "FASS", label: "FASS" },
+  { id: "Business", label: "BIZ" },
 ];
 
 export default function LocationPrompt({
   allVenues,
   activeCluster,
   searchQuery,
+  detectedCluster,
+  geoError,
   onClusterSelect,
   onSearchChange,
   onAutoDetect,
@@ -62,22 +67,30 @@ export default function LocationPrompt({
   return (
     <div className="glass space-y-4 p-4">
       {/* Auto-detect row */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={onAutoDetect}
           disabled={geoLoading}
-          className="flex items-center gap-2 rounded-lg bg-nus-blue px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="flex items-center gap-2 rounded-lg bg-nus-blue px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-nus-blue/90 active:scale-[0.98] disabled:opacity-60"
         >
           {geoLoading ? (
             <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
           ) : (
-            <span>📍</span>
+            <span aria-hidden>📍</span>
           )}
-          Auto-Detect Cluster
+          Find rooms near me
         </button>
-        <span className="text-xs text-zinc-400">
-          or select below
-        </span>
+        {detectedCluster ? (
+          <span className="text-xs text-zinc-500">
+            Near <span className="font-medium text-nus-blue">{detectedCluster}</span>
+          </span>
+        ) : geoError ? (
+          <span className="text-xs text-amber-600">
+            Location off — sorted by longest free time
+          </span>
+        ) : (
+          <span className="text-xs text-zinc-400">or pick a faculty</span>
+        )}
       </div>
 
       {/* Cluster pills */}
@@ -86,9 +99,9 @@ export default function LocationPrompt({
           <button
             key={pill.id ?? "__all"}
             onClick={() => onClusterSelect(pill.id)}
-            className={`rounded-full border px-3.5 py-1 text-sm font-medium transition-all ${
+            className={`rounded-full border px-3.5 py-1 text-sm font-medium transition-all active:scale-[0.97] ${
               activeCluster === pill.id
-                ? "border-nus-blue bg-nus-blue text-white"
+                ? "border-nus-blue bg-nus-blue text-white shadow-sm"
                 : "border-zinc-200 bg-white/60 text-zinc-600 hover:border-nus-blue hover:text-nus-blue"
             }`}
           >
@@ -105,8 +118,8 @@ export default function LocationPrompt({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           onFocus={() => setFocused(true)}
-          placeholder="Search building, block or LT code (e.g., E3, COM1)..."
-          className="w-full rounded-lg border border-zinc-200 bg-white/60 px-4 py-2.5 text-sm text-zinc-800 placeholder-zinc-400 outline-none transition-colors focus:border-nus-orange"
+          placeholder="Search building, block or LT code (e.g., E3, COM1)…"
+          className="w-full rounded-lg border border-zinc-200 bg-white/60 px-4 py-2.5 text-sm text-zinc-800 placeholder-zinc-400 outline-none transition-colors focus:border-nus-orange focus:ring-2 focus:ring-nus-orange/20"
         />
         {focused && suggestions.length > 0 && (
           <ul

@@ -1,15 +1,21 @@
-const CACHE = "spacefinder-v1";
+const CACHE = "spacefinder-v2";
 const ASSETS = ["/", "/manifest.json", "/venues_timetable.json"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE).then((cache) => cache.addAll(ASSETS))
   );
+  self.skipWaiting();
 });
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
+
+  // Only cache same-origin assets. Live NUSMods data is cached in IndexedDB
+  // by the app, so we don't duplicate the large cross-origin payload here.
+  const sameOrigin = new URL(request.url).origin === self.location.origin;
+  if (!sameOrigin) return;
 
   event.respondWith(
     caches.match(request).then((cached) => {
@@ -29,8 +35,15 @@ self.addEventListener("fetch", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    )
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((k) => k.startsWith("spacefinder") && k !== CACHE)
+            .map((k) => caches.delete(k))
+        )
+      )
+      .then(() => self.clients.claim())
   );
 });

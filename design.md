@@ -55,50 +55,44 @@ The interface follows a single-page progressive disclosure pattern optimized for
 
 ## 3. System Architecture & Data Pipeline
 
-To maintain zero-cost deployment capabilities on Vercel or Netlify, the architecture separates schedule computation away from runtime. The data engine updates ahead of time via a daily static compilation automation loop.
+To maintain zero-cost, zero-backend deployment on Vercel, the app fetches
+NUSMods data **directly in the browser** and computes everything client-side.
+There is no GitHub Actions cron and no Python parser.
 ┌────────────────────────┐
    │   NUSMods API v2       │
-   │  (Static JSON Feeds)   │
+   │ venueInformation.json  │  (per-semester, CORS-enabled)
    └───────────┬────────────┘
                │
-               ▼ (Every morning via CRON)
-   ┌────────────────────────┐
-   │ GitHub Actions Worker  │ ─── [Offline Python Parser Engine]
-   └───────────┬────────────┘
-               │
-               ▼ (Generates highly optimized, indexed mapping)
-   ┌────────────────────────┐
-   │ Static JSON Matrix     │
-   │ (venues_timetable.json)│
-   └───────────┬────────────┘
-               │
-               ▼ (Deployed directly to edge CDN)
-
+               ▼ (fetched directly by the browser, once per ~12h)
 ┌─────────────────────────────────────────────────────────┐
 │ Frontend Client App (Next.js / Vercel Edge Cache)       │
 │                                                         │
-│  ┌──────────────────────┐                               │
-│  │ Browser Geolocation  │ ─── Checks Javascript Clock  │
-│  │ (Fuzzy Cluster Filter│     and flags room occupancy  │
-│  └──────────────────────┘     client-side natively.     │
+│  ┌──────────────────────┐   ┌────────────────────────┐  │
+│  │ Normalize + cluster  │   │ IndexedDB cache (SWR,  │  │
+│  │ map (lib/nusmods.ts) │──▶│ 12h TTL) + /public      │  │
+│  └──────────────────────┘   │ snapshot fallback       │  │
+│  ┌──────────────────────┐   └────────────────────────┘  │
+│  │ Browser Geolocation  │ ─── Checks JS clock and flags │
+│  │ (cluster distance)   │     room occupancy natively.  │
+│  └──────────────────────┘                                │
 └─────────────────────────────────────────────────────────┘
 
-### 3.1 The Daily Parsing Loop (GitHub Actions Pipeline)
-1.  **Trigger:** A scheduled GitHub Actions routine runs every single morning at 04:00 SGT (`cron: '0 20 * * *'`).
-2.  **Process:**
-    * Downloads `https://api.nusmods.com/v2/2025-2026/modules.json` (or the current active academic year dataset).
-    * Executes an internal data compression pipeline: loops through every module, flattens the multi-tier `timetable` arrays, and aggregates them by individual unique `venue` strings.
-    * Resolves day-of-the-week slots into an array matrix structured by hours (`0800` to `2200`).
-3.  **Artifact Generation:** Writes a compressed, indexed file named `venues_timetable.json`. This file mapping maps keys directly from standard venue terms to a clean structural matrix:
-    ```json
-    {
-      "COM1-0206": {
-        "Monday": [{"start": "0900", "end": "1100", "module": "CS1101S"}],
-        "Tuesday": []
-      }
-    }
-    ```
-4.  **Deployment Commit:** The action automatically pushes this `.json` asset into the current frontend repository, initiating an instant static redeployment across the Vercel CDN.
+### 3.1 The Client-Side Data Loop
+
+1.  **Fetch:** On load, `lib/nusmods.ts` fetches the current academic year's
+    `venueInformation.json` for both semesters in parallel
+    (`https://api.nusmods.com/v2/{acadYear}/semesters/{sem}/venueInformation.json`).
+2.  **Normalize:** Flattens each venue's per-day `classes`, maps venues to
+    faculty clusters via prefix rules (`lib/cluster-rules.ts`), and resolves
+    NUSMods' three `weeks` encodings (`number[]`, `{start,end,weeks}`,
+    `{start,end,weekInterval}`) into absolute week numbers.
+3.  **Cache (stale-while-revalidate):** The normalized dataset is stored in
+    IndexedDB with a `fetchedAt` timestamp. Subsequent visits render instantly
+    from cache and only refetch when older than the 12h TTL. If the network or
+    CORS fails with no cache, the app falls back to the bundled
+    `/public/venues_timetable.json` snapshot.
+4.  **Cleanup:** A `DATA_SCHEMA_VERSION` purges old caches on bump; an in-app
+    "Refresh data / clear cache" control wipes IndexedDB + service-worker caches.
 
 ### 3.2 Frontend Edge Computation Architecture
 When a student interacts with the application interface:

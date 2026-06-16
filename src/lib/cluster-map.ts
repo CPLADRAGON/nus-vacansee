@@ -19,3 +19,15 @@ export function findNearestCluster(lat: number, lng: number): string {
   }
   return nearest;
 }
+
+// Squared-ish planar distance from a coordinate to a cluster's centroid.
+// Used only for relative ranking, so an exact great-circle distance is unneeded.
+export function clusterDistance(
+  clusterId: string,
+  lat: number,
+  lng: number
+): number {
+  const c = CLUSTERS.find((x) => x.id === clusterId);
+  if (!c) return Infinity;
+  return Math.sqrt((c.lat - lat) ** 2 + (c.lng - lng) ** 2);
+}
