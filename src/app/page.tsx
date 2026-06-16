@@ -8,6 +8,7 @@ import { computeOccupancy, getSingaporeTime } from "@/lib/occupancy-engine";
 import { getCurrentSemester } from "@/lib/calendar";
 import { findNearestCluster, clusterDistance } from "@/lib/cluster-map";
 import { clearCache } from "@/lib/venue-cache";
+import type { RoomType } from "@/lib/room-classify";
 import LocationPrompt from "@/components/LocationPrompt";
 import RoomGrid from "@/components/RoomGrid";
 import VenueDetail from "@/components/VenueDetail";
@@ -22,6 +23,7 @@ export default function Home() {
   const [now, setNow] = useState<Date>(() => getSingaporeTime());
   const [cluster, setCluster] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [roomType, setRoomType] = useState<RoomType | null>(null);
   const [showAllNear, setShowAllNear] = useState(false);
   const [detailVenue, setDetailVenue] = useState<[string, VenueEntry] | null>(null);
   const autoRequested = useRef(false);
@@ -73,7 +75,8 @@ export default function Home() {
   // Near-me: all vacant rooms ranked by nearness then longest free block.
   const nearMe = useMemo(() => {
     const hasGeo = geo.lat != null && geo.lng != null;
-    const vacant = withOccupancy.filter((v) => v.occ.status === "vacant");
+    let vacant = withOccupancy.filter((v) => v.occ.status === "vacant");
+    if (roomType) vacant = vacant.filter((v) => v.entry.type === roomType);
     vacant.sort((a, b) => {
       if (hasGeo) {
         const da = clusterDistance(a.entry.cluster, geo.lat!, geo.lng!);
@@ -86,12 +89,13 @@ export default function Home() {
       return a.code.localeCompare(b.code);
     });
     return vacant;
-  }, [withOccupancy, geo.lat, geo.lng]);
+  }, [withOccupancy, geo.lat, geo.lng, roomType]);
 
   // Browse filter: cluster + fuzzy search.
   const filtered = useMemo(() => {
     let result = withOccupancy;
     if (cluster) result = result.filter((v) => v.entry.cluster === cluster);
+    if (roomType) result = result.filter((v) => v.entry.type === roomType);
     if (search.trim()) {
       const q = search.trim().toUpperCase();
       result = result.filter((v) => v.code.toUpperCase().includes(q));
@@ -102,7 +106,7 @@ export default function Home() {
       if (r !== 0) return r;
       return a.code.localeCompare(b.code);
     });
-  }, [withOccupancy, cluster, search]);
+  }, [withOccupancy, cluster, search, roomType]);
 
   const nearShown = showAllNear ? nearMe : nearMe.slice(0, NEAR_ME_LIMIT);
 
@@ -168,6 +172,8 @@ export default function Home() {
               searchQuery={search}
               detectedCluster={detectedCluster}
               geoError={geo.error}
+              activeType={roomType}
+              onTypeSelect={setRoomType}
               onClusterSelect={(c) => {
                 setCluster(c);
                 setSearch("");
@@ -184,6 +190,7 @@ export default function Home() {
                   <p className="mb-3 text-xs text-zinc-500">
                     {filtered.length} room{filtered.length !== 1 ? "s" : ""}
                     {cluster ? ` in ${cluster}` : ""}
+                    {roomType ? ` · ${roomType}` : ""}
                     {search ? ` matching “${search}”` : ""}
                   </p>
                   <RoomGrid
@@ -205,6 +212,7 @@ export default function Home() {
                         {detectedCluster
                           ? `${nearMe.length} free · nearest: ${detectedCluster}`
                           : `${nearMe.length} free · enable location to sort by nearness`}
+                        {roomType ? ` · ${roomType}` : ""}
                       </p>
                     </div>
                   </div>

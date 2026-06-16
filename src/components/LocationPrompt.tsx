@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { CLUSTERS } from "@/data/clusters";
+import { ROOM_TYPES, type RoomType } from "@/lib/room-classify";
 import type { VenueEntry } from "@/types";
 
 interface Props {
@@ -10,11 +11,21 @@ interface Props {
   searchQuery: string;
   detectedCluster: string | null;
   geoError: string | null;
+  activeType: RoomType | null;
+  onTypeSelect: (type: RoomType | null) => void;
   onClusterSelect: (cluster: string | null) => void;
   onSearchChange: (q: string) => void;
   onAutoDetect: () => void;
   geoLoading: boolean;
 }
+
+const TYPE_LABELS: Record<RoomType, string> = {
+  "Lecture Theatre": "Lecture Theatre",
+  "Tutorial Room": "Tutorial",
+  Lab: "Lab",
+  "Seminar Room": "Seminar",
+  Classroom: "Classroom",
+};
 
 const HARDCODED_PILLS = [
   { id: null, label: "Near me" },
@@ -31,6 +42,8 @@ export default function LocationPrompt({
   searchQuery,
   detectedCluster,
   geoError,
+  activeType,
+  onTypeSelect,
   onClusterSelect,
   onSearchChange,
   onAutoDetect,
@@ -106,6 +119,33 @@ export default function LocationPrompt({
             }`}
           >
             {pill.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Room-type filter */}
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        <button
+          onClick={() => onTypeSelect(null)}
+          className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-all active:scale-[0.97] ${
+            activeType === null
+              ? "border-nus-orange bg-nus-orange/10 text-nus-orange"
+              : "border-zinc-200 bg-white/60 text-zinc-500 hover:border-nus-orange hover:text-nus-orange"
+          }`}
+        >
+          Any type
+        </button>
+        {ROOM_TYPES.map((t) => (
+          <button
+            key={t}
+            onClick={() => onTypeSelect(activeType === t ? null : t)}
+            className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-all active:scale-[0.97] ${
+              activeType === t
+                ? "border-nus-orange bg-nus-orange/10 text-nus-orange"
+                : "border-zinc-200 bg-white/60 text-zinc-500 hover:border-nus-orange hover:text-nus-orange"
+            }`}
+          >
+            {TYPE_LABELS[t]}
           </button>
         ))}
       </div>

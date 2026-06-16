@@ -1,5 +1,6 @@
 import type { VenueEntry, TimetableSlot, VenueMatrix } from "@/types";
 import { inferCluster, shouldSkipVenue } from "./cluster-rules";
+import { classifyRoom } from "./room-classify";
 import {
   buildCalendar,
   computeAcademicYearStart,
@@ -23,6 +24,7 @@ interface RawClass {
   weeks?: RawWeeks;
   moduleCode?: string;
   lessonType?: string;
+  size?: number;
 }
 
 interface RawDayInfo {
@@ -78,11 +80,17 @@ function normalizeWeeks(weeks: RawWeeks | undefined, semStartISO: string): numbe
   return [];
 }
 
+interface VenueMeta {
+  lessonTypes: string[];
+  maxSize: number;
+}
+
 function normalizeSemester(
   raw: RawVenueInfo,
   semester: number,
   semStartISO: string,
-  out: Record<string, VenueEntry>
+  out: Record<string, VenueEntry>,
+  meta: Record<string, VenueMeta>
 ): void {
   for (const [venue, dayInfos] of Object.entries(raw)) {
     if (shouldSkipVenue(venue)) continue;
@@ -115,6 +123,17 @@ function normalizeSemester(
         const arr = (entry as unknown as Record<string, TimetableSlot[]>)[day];
         if (arr) arr.push(slot);
         else (entry as unknown as Record<string, TimetableSlot[]>)[day] = [slot];
+
+        // Accumulate room metadata for type/capacity inference.
+        let m = meta[venue];
+        if (!m) {
+          m = { lessonTypes: [], maxSize: 0 };
+          meta[venue] = m;
+        }
+        if (cls.lessonType) m.lessonTypes.push(cls.lessonType);
+        if (typeof cls.size === "number" && cls.size > m.maxSize) {
+          m.maxSize = cls.size;
+        }
       }
     }
   }
@@ -152,8 +171,9 @@ export async function fetchVenueData(
   }
 
   const venues: Record<string, VenueEntry> = {};
-  normalizeSemester(raw1, 1, sems["1"].start, venues);
-  normalizeSemester(raw2, 2, sems["2"].start, venues);
+  const meta: Record<string, VenueMeta> = {};
+  normalizeSemester(raw1, 1, sems["1"].start, venues, meta);
+  normalizeSemester(raw2, 2, sems["2"].start, venues, meta);
 
   // Sort each day's slots by start time for deterministic display.
   for (const entry of Object.values(venues)) {
@@ -163,6 +183,14 @@ export async function fetchVenueData(
       }
       void k;
     }
+  }
+
+  // Apply inferred room type + approximate capacity.
+  for (const [code, entry] of Object.entries(venues)) {
+    const m = meta[code];
+    if (!m) continue;
+    if (m.maxSize > 0) entry.capacity = m.maxSize;
+    entry.type = classifyRoom(code, m.lessonTypes, m.maxSize);
   }
 
   const matrix: VenueMatrix = {

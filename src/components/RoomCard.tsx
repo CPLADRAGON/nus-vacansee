@@ -41,6 +41,19 @@ export default function RoomCard({ venue, entry, now, semester, onSelect }: Prop
         </span>
       </div>
 
+      {(entry.type || entry.capacity) && (
+        <div className="mb-2 flex flex-wrap items-center gap-1.5">
+          {entry.type && (
+            <span className="rounded-full bg-nus-blue/10 px-2 py-0.5 text-[11px] font-medium text-nus-blue">
+              {entry.type}
+            </span>
+          )}
+          {entry.capacity ? (
+            <span className="text-[11px] text-zinc-400">~{entry.capacity} seats</span>
+          ) : null}
+        </div>
+      )}
+
       <div className="mb-2">
         <StatusBadge info={occupancy} />
       </div>

@@ -1,3 +1,5 @@
+import type { RoomType } from "@/lib/room-classify";
+
 export interface TimetableSlot {
   start: string;
   end: string;
@@ -12,6 +14,8 @@ export interface VenueDaySchedule {
 
 export interface VenueEntry {
   cluster: string;
+  capacity?: number;
+  type?: RoomType;
   Monday?: TimetableSlot[];
   Tuesday?: TimetableSlot[];
   Wednesday?: TimetableSlot[];

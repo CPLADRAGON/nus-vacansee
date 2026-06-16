@@ -38,7 +38,21 @@ export default function VenueDetail({ venue, entry, now, semester, onClose }: Pr
             <h2 className="font-mono text-2xl font-bold text-nus-blue">
               {venue}
             </h2>
-            <span className="text-xs text-zinc-400">{entry.cluster}</span>
+            <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-zinc-400">
+              <span>{entry.cluster}</span>
+              {entry.type && (
+                <>
+                  <span className="text-zinc-300">·</span>
+                  <span className="font-medium text-nus-blue">{entry.type}</span>
+                </>
+              )}
+              {entry.capacity ? (
+                <>
+                  <span className="text-zinc-300">·</span>
+                  <span>~{entry.capacity} seats</span>
+                </>
+              ) : null}
+            </div>
           </div>
           <button
             onClick={onClose}
