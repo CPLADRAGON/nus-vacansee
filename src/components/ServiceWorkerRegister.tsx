@@ -4,32 +4,28 @@ import { useEffect } from "react";
 
 export default function ServiceWorkerRegister() {
   useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
 
-    // Skip the SW in development so local code changes aren't masked by cache.
-    if (process.env.NODE_ENV !== "production") {
-      navigator.serviceWorker.getRegistrations().then((regs) => {
-        regs.forEach((r) => r.unregister());
-      });
-      return;
-    }
-
+    // We no longer use a service worker (it caused stale code to persist across
+    // deploys). Unregister any existing worker and clear its caches so clients
+    // always load fresh content from the network.
     navigator.serviceWorker
-      .register("/sw.js")
-      .then((reg) => {
-        reg.update();
-      })
-      .catch(() => {
-        // SW registration failed — app still works, just no offline cache
-      });
+      .getRegistrations()
+      .then((regs) => Promise.all(regs.map((r) => r.unregister())))
+      .catch(() => {});
 
-    // When a new worker takes control, reload once to load the fresh app.
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      if (refreshing) return;
-      refreshing = true;
-      window.location.reload();
-    });
+    if (typeof caches !== "undefined") {
+      caches
+        .keys()
+        .then((keys) =>
+          Promise.all(
+            keys
+              .filter((k) => k.startsWith("spacefinder"))
+              .map((k) => caches.delete(k))
+          )
+        )
+        .catch(() => {});
+    }
   }, []);
 
   return null;

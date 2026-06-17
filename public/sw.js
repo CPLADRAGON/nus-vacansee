@@ -1,73 +1,39 @@
-const CACHE = "spacefinder-v4";
-const ASSETS = [
-  "/",
-  "/manifest.json",
-  "/venues_timetable.json",
-  "/icon.svg",
-  "/apple-touch-icon.png",
-  "/icon-192.png",
-  "/icon-512.png",
-];
+// Self-destroying ("kill-switch") service worker.
+//
+// Earlier versions cached the app shell cache-first, which caused stale code to
+// persist across deployments. Browsers fetch this sw.js bypassing the SW cache,
+// so shipping this version makes existing clients install it, clear every cache,
+// unregister the worker, and fall back to the network for fresh content.
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(ASSETS))
-  );
+self.addEventListener("install", () => {
   self.skipWaiting();
-});
-
-self.addEventListener("fetch", (event) => {
-  const { request } = event;
-  if (request.method !== "GET") return;
-
-  const sameOrigin = new URL(request.url).origin === self.location.origin;
-  if (!sameOrigin) return;
-
-  // Navigation/document requests: network-first so new deployments are picked
-  // up immediately; fall back to cached shell when offline.
-  if (request.mode === "navigate" || request.destination === "document") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() =>
-          caches.match(request).then((m) => m || caches.match("/"))
-        )
-    );
-    return;
-  }
-
-  // Static assets (hashed chunks, icons, json): stale-while-revalidate.
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      const fetchPromise = fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE).then((cache) => cache.put(request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached ?? fetchPromise;
-    })
-  );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter((k) => k.startsWith("spacefinder") && k !== CACHE)
-            .map((k) => caches.delete(k))
-        )
-      )
-      .then(() => self.clients.claim())
+    (async () => {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      } catch {
+        /* ignore */
+      }
+      try {
+        await self.registration.unregister();
+      } catch {
+        /* ignore */
+      }
+      // Reload open tabs once so they pick up fresh network assets.
+      const clients = await self.clients.matchAll({ type: "window" });
+      for (const client of clients) {
+        try {
+          client.navigate(client.url);
+        } catch {
+          /* ignore */
+        }
+      }
+    })()
   );
 });
+
+// No fetch handler: all requests go straight to the network.

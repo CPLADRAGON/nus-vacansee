@@ -19,7 +19,8 @@ interface GeoState {
 }
 
 const MESSAGES: Record<Exclude<GeoErrorCode, null>, string> = {
-  denied: "Location blocked — enable it in your browser settings, then retry.",
+  denied:
+    "Location is blocked for this site — tap the lock/ⓘ icon in your address bar, set Location to Allow, then retry.",
   unavailable: "Couldn't determine your location right now.",
   timeout: "Locating timed out — please retry.",
   unsupported: "Your browser doesn't support location.",
