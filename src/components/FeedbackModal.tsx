@@ -42,9 +42,12 @@ export default function FeedbackModal({ onClose }: { onClose: () => void }) {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setStatus("success");
-    } catch (e) {
+    } catch {
       setStatus("error");
-      setErrorMsg((e as Error).message || "Something went wrong.");
+      setErrorMsg(
+        "Couldn't send your feedback right now. Please try again in a moment" +
+          (FALLBACK_EMAIL ? ", or email us instead." : ".")
+      );
     }
   };
 
@@ -107,7 +110,22 @@ export default function FeedbackModal({ onClose }: { onClose: () => void }) {
               className="w-full rounded-lg border border-zinc-200 bg-white/70 px-3 py-2 text-sm text-zinc-800 placeholder-zinc-400 outline-none focus:border-nus-orange focus:ring-2 focus:ring-nus-orange/20"
             />
             {status === "error" && (
-              <p className="text-xs text-red-600">{errorMsg}</p>
+              <p className="text-xs text-red-600">
+                {errorMsg}
+                {FALLBACK_EMAIL && (
+                  <>
+                    {" "}
+                    <a
+                      href={`mailto:${FALLBACK_EMAIL}?subject=${encodeURIComponent(
+                        "NUS Vacansee feedback"
+                      )}&body=${encodeURIComponent(message)}`}
+                      className="underline"
+                    >
+                      Email us
+                    </a>
+                  </>
+                )}
+              </p>
             )}
             <button
               onClick={submit}

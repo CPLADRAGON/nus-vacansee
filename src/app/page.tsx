@@ -184,7 +184,7 @@ export default function Home() {
                   strokeLinejoin="round"
                 />
               </svg>
-              <span className="hidden sm:inline">Feedback</span>
+              <span>Feedback</span>
             </button>
             <span className="font-mono text-xs tabular-nums text-white/70">
               {now.toLocaleTimeString("en-SG", {
