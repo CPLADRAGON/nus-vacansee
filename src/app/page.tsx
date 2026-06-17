@@ -6,7 +6,7 @@ import { useVenueData } from "@/hooks/useVenueData";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { computeOccupancy, getSingaporeTime } from "@/lib/occupancy-engine";
 import { getCurrentSemester } from "@/lib/calendar";
-import { findNearestCluster, clusterDistance } from "@/lib/cluster-map";
+import { findNearestCluster, venueDistance } from "@/lib/cluster-map";
 import { clearCache } from "@/lib/venue-cache";
 import type { RoomType } from "@/lib/room-classify";
 import LocationPrompt from "@/components/LocationPrompt";
@@ -79,8 +79,8 @@ export default function Home() {
     if (roomType) vacant = vacant.filter((v) => v.entry.type === roomType);
     vacant.sort((a, b) => {
       if (hasGeo) {
-        const da = clusterDistance(a.entry.cluster, geo.lat!, geo.lng!);
-        const db = clusterDistance(b.entry.cluster, geo.lat!, geo.lng!);
+        const da = venueDistance(a.entry, geo.lat!, geo.lng!);
+        const db = venueDistance(b.entry, geo.lat!, geo.lng!);
         if (da !== db) return da - db;
       }
       const fa = a.occ.freeMinutes ?? 0;

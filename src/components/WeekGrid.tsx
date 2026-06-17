@@ -24,9 +24,47 @@ const DAY_SHORT: Record<string, string> = {
 
 const HOUR_W = 52; // px per hour in the scrollable time track
 const DAY_COL = 44; // px width of the sticky day-label column
+const LANE_H = 22; // px per stacked lane within a day row
+
+interface LaneItem {
+  slot: TimetableSlot;
+  lane: number;
+}
+interface DayLayout {
+  items: LaneItem[];
+  lanes: number;
+}
 
 function toMin(hhmm: string): number {
   return parseInt(hhmm.slice(0, 2), 10) * 60 + parseInt(hhmm.slice(2), 10);
+}
+
+// Dedupe identical slots, then assign overlapping classes to separate lanes so
+// concurrent bookings stack vertically instead of overlapping on top of each other.
+function packLanes(slots: TimetableSlot[]): DayLayout {
+  const seen = new Set<string>();
+  const unique: TimetableSlot[] = [];
+  for (const s of slots) {
+    const key = `${s.start}|${s.end}|${s.module}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(s);
+  }
+  unique.sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end));
+
+  const laneEnds: string[] = [];
+  const items: LaneItem[] = [];
+  for (const s of unique) {
+    let lane = laneEnds.findIndex((end) => end <= s.start);
+    if (lane === -1) {
+      lane = laneEnds.length;
+      laneEnds.push(s.end);
+    } else {
+      laneEnds[lane] = s.end;
+    }
+    items.push({ slot: s, lane });
+  }
+  return { items, lanes: Math.max(1, laneEnds.length) };
 }
 
 // Compact a sorted week-number list into ranges, e.g. [3,4,5,7] -> "3–5, 7".
@@ -54,9 +92,9 @@ export default function WeekGrid({ entry, now, semester }: Props) {
   const currentWeek = semester ? getCurrentWeek(semester.start) : null;
   const todayName = DAYS[now.getDay() === 0 ? 6 : now.getDay() - 1];
 
-  // Active slots per day for the current semester + week.
+  // Active slots per day (current semester + week), packed into lanes.
   const byDay = useMemo(() => {
-    const map: Record<string, TimetableSlot[]> = {};
+    const map: Record<string, DayLayout> = {};
     const days = [...DAYS, "Sunday"];
     for (const day of days) {
       const slots = (entry as unknown as Record<string, TimetableSlot[] | undefined>)[day];
@@ -68,7 +106,7 @@ export default function WeekGrid({ entry, now, semester }: Props) {
               (currentWeek ? s.weeks.includes(currentWeek) : true)
           )
         : slots;
-      if (active.length) map[day] = [...active].sort((a, b) => a.start.localeCompare(b.start));
+      if (active.length) map[day] = packLanes(active);
     }
     return map;
   }, [entry, semester, currentWeek]);
@@ -77,10 +115,10 @@ export default function WeekGrid({ entry, now, semester }: Props) {
   const { winStart, winEnd, hours } = useMemo(() => {
     let lo = 8 * 60;
     let hi = 22 * 60;
-    for (const slots of Object.values(byDay)) {
-      for (const s of slots) {
-        lo = Math.min(lo, Math.floor(toMin(s.start) / 60) * 60);
-        hi = Math.max(hi, Math.ceil(toMin(s.end) / 60) * 60);
+    for (const layout of Object.values(byDay)) {
+      for (const { slot } of layout.items) {
+        lo = Math.min(lo, Math.floor(toMin(slot.start) / 60) * 60);
+        hi = Math.max(hi, Math.ceil(toMin(slot.end) / 60) * 60);
       }
     }
     const hrs: number[] = [];
@@ -100,7 +138,12 @@ export default function WeekGrid({ entry, now, semester }: Props) {
   } | null>(null);
 
   const nowMin = now.getHours() * 60 + now.getMinutes();
-  const showNow = semester != null && nowMin >= winStart && nowMin <= winEnd;
+  const showNow = nowMin >= winStart && nowMin <= winEnd;
+  const nowLabel = now.toLocaleTimeString("en-SG", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Singapore",
+  });
 
   return (
     <div>
@@ -127,7 +170,9 @@ export default function WeekGrid({ entry, now, semester }: Props) {
 
           {/* Day rows */}
           {rows.map((day) => {
-            const slots = byDay[day] ?? [];
+            const layout = byDay[day];
+            const lanes = layout?.lanes ?? 1;
+            const rowH = Math.max(44, lanes * LANE_H + 8);
             const isToday = day === todayName;
             return (
               <div
@@ -145,7 +190,7 @@ export default function WeekGrid({ entry, now, semester }: Props) {
                   {DAY_SHORT[day]}
                 </div>
 
-                <div className="relative h-11" style={{ width: trackWidth }}>
+                <div className="relative" style={{ width: trackWidth, height: rowH }}>
                   {/* Hour gridlines */}
                   {hours.slice(1, -1).map((h, i) => (
                     <span
@@ -156,14 +201,14 @@ export default function WeekGrid({ entry, now, semester }: Props) {
                   ))}
 
                   {/* Free-all-day hint */}
-                  {slots.length === 0 && (
+                  {!layout && (
                     <span className="absolute inset-0 flex items-center pl-2 text-[10px] text-emerald-500/70">
                       Free all day
                     </span>
                   )}
 
-                  {/* Occupied blocks */}
-                  {slots.map((s, i) => {
+                  {/* Occupied blocks (lane-packed) */}
+                  {layout?.items.map(({ slot: s, lane }, i) => {
                     const left = pct(toMin(s.start));
                     const width = pct(toMin(s.end)) - left;
                     const isSel =
@@ -174,12 +219,17 @@ export default function WeekGrid({ entry, now, semester }: Props) {
                         onClick={() => setSelected({ day, slot: s })}
                         title={`${s.module} · ${formatTime(s.start)}–${formatTime(s.end)}`}
                         aria-label={`${s.module} from ${formatTime(s.start)} to ${formatTime(s.end)} on ${day}`}
-                        className={`absolute inset-y-1 overflow-hidden rounded px-1 text-left font-mono text-[10px] leading-tight text-white transition-shadow ${
+                        className={`absolute overflow-hidden rounded px-1 text-left font-mono text-[10px] leading-tight text-white transition-shadow ${
                           isSel
                             ? "z-10 bg-nus-blue ring-2 ring-nus-orange"
                             : "bg-nus-blue/85 hover:bg-nus-blue"
                         }`}
-                        style={{ left: `${left}%`, width: `calc(${width}% - 2px)` }}
+                        style={{
+                          left: `${left}%`,
+                          width: `calc(${width}% - 2px)`,
+                          top: `calc(${(lane / lanes) * 100}% + 3px)`,
+                          height: `calc(${100 / lanes}% - 6px)`,
+                        }}
                       >
                         <span className="block truncate">{s.module}</span>
                       </button>
@@ -192,7 +242,9 @@ export default function WeekGrid({ entry, now, semester }: Props) {
                       className="pointer-events-none absolute inset-y-0 z-30 w-0.5 bg-nus-orange"
                       style={{ left: `${pct(nowMin)}%` }}
                     >
-                      <span className="absolute -top-0.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-nus-orange" />
+                      <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-nus-orange px-1 py-0.5 text-[8px] font-semibold leading-none text-white shadow-sm">
+                        {nowLabel}
+                      </span>
                     </span>
                   )}
                 </div>

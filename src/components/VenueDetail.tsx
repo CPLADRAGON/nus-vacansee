@@ -23,7 +23,7 @@ export default function VenueDetail({ venue, entry, now, semester, onClose }: Pr
   );
 
   const currentWeek = semester ? getCurrentWeek(semester.start) : null;
-  const dest = getDestination(venue, entry.cluster);
+  const dest = getDestination(venue, entry);
 
   return (
     <div
@@ -40,6 +40,9 @@ export default function VenueDetail({ venue, entry, now, semester, onClose }: Pr
             <h2 className="font-mono text-2xl font-bold text-nus-blue">
               {venue}
             </h2>
+            {entry.roomName && (
+              <p className="text-sm text-zinc-600">{entry.roomName}</p>
+            )}
             <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-zinc-400">
               <span>{entry.cluster}</span>
               {entry.type && (

@@ -16,6 +16,10 @@ export interface VenueEntry {
   cluster: string;
   capacity?: number;
   type?: RoomType;
+  lat?: number;
+  lng?: number;
+  roomName?: string;
+  floor?: number;
   Monday?: TimetableSlot[];
   Tuesday?: TimetableSlot[];
   Wednesday?: TimetableSlot[];

@@ -1,4 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="64" fill="#003D7C"/>
-  <text x="256" y="300" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="700" font-size="240" fill="#EF7C00">SF</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="NUS SpaceFinder">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0A4A91"/>
+      <stop offset="1" stop-color="#003D7C"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- location pin -->
+  <path d="M256 92c70 0 126 56 126 126 0 86-101 188-121 207a7 7 0 0 1-10 0c-20-19-121-121-121-207 0-70 56-126 126-126z"
+        fill="#FFFFFF"/>
+  <!-- inner available spot -->
+  <circle cx="256" cy="214" r="60" fill="#EF7C00"/>
+  <!-- check mark -->
+  <path d="M230 214l18 18 34-36" fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

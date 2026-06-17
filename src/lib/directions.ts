@@ -1,5 +1,6 @@
 import { BUILDINGS } from "@/data/buildings";
 import { getClusterCoords } from "@/lib/cluster-map";
+import type { VenueEntry } from "@/types";
 
 export interface Destination {
   lat: number;
@@ -15,14 +16,30 @@ export function buildingKey(venue: string): string {
   return m ? m[0] : venue.toUpperCase();
 }
 
-export function getDestination(venue: string, cluster: string): Destination {
-  const key = buildingKey(venue);
-  const b = BUILDINGS[key];
+// Resolution order: exact NUSMods venue coordinates -> curated building table
+// -> faculty cluster centroid (flagged approximate).
+export function getDestination(venue: string, entry: VenueEntry): Destination {
+  if (typeof entry.lat === "number" && typeof entry.lng === "number") {
+    const label = entry.roomName
+      ? entry.floor != null
+        ? `${entry.roomName} · L${entry.floor}`
+        : entry.roomName
+      : venue;
+    return { lat: entry.lat, lng: entry.lng, label, approx: false };
+  }
+
+  const b = BUILDINGS[buildingKey(venue)];
   if (b) {
     return { lat: b.lat, lng: b.lng, label: b.name, approx: false };
   }
-  const c = getClusterCoords(cluster);
-  return { lat: c.lat, lng: c.lng, label: `${cluster} (approx. area)`, approx: true };
+
+  const c = getClusterCoords(entry.cluster);
+  return {
+    lat: c.lat,
+    lng: c.lng,
+    label: `${entry.cluster} (approx. area)`,
+    approx: true,
+  };
 }
 
 // Universal Google Maps directions URL. Opens the Maps app on mobile and the

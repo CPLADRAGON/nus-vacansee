@@ -8,6 +8,8 @@ import {
 } from "./calendar";
 
 const API_BASE = "https://api.nusmods.com/v2";
+const VENUE_LOCATIONS_URL =
+  "https://raw.githubusercontent.com/nusmodifications/nusmods/master/website/src/data/venues.json";
 
 // --- Raw NUSMods venueInformation.json shapes ------------------------------
 
@@ -149,6 +151,43 @@ async function fetchSemester(
   return (await res.json()) as RawVenueInfo;
 }
 
+interface RawVenueLocation {
+  roomName?: string;
+  floor?: number;
+  location?: { x?: number; y?: number };
+}
+
+interface VenueLocation {
+  lat: number;
+  lng: number;
+  roomName?: string;
+  floor?: number;
+}
+
+// NUSMods crowd-sourced per-venue coordinates (location.x = lng, location.y = lat).
+async function fetchVenueLocations(): Promise<Record<string, VenueLocation>> {
+  const out: Record<string, VenueLocation> = {};
+  try {
+    const res = await fetch(VENUE_LOCATIONS_URL);
+    if (!res.ok) return out;
+    const raw = (await res.json()) as Record<string, RawVenueLocation>;
+    for (const [code, v] of Object.entries(raw)) {
+      const loc = v?.location;
+      if (loc && typeof loc.x === "number" && typeof loc.y === "number") {
+        out[code.toUpperCase()] = {
+          lat: loc.y,
+          lng: loc.x,
+          roomName: v.roomName,
+          floor: v.floor,
+        };
+      }
+    }
+  } catch {
+    /* locations are optional; ignore failures */
+  }
+  return out;
+}
+
 // Fetch + normalize both semesters into the app's VenueMatrix shape.
 export async function fetchVenueData(
   today: Date = new Date()
@@ -158,9 +197,10 @@ export async function fetchVenueData(
   const calendar: CalendarMap = buildCalendar(acadStart);
   const sems = calendar[acadYear];
 
-  const [raw1, raw2] = await Promise.all([
+  const [raw1, raw2, locations] = await Promise.all([
     fetchSemester(acadYear, 1).catch(() => ({}) as RawVenueInfo),
     fetchSemester(acadYear, 2).catch(() => ({}) as RawVenueInfo),
+    fetchVenueLocations(),
   ]);
 
   if (
@@ -185,12 +225,20 @@ export async function fetchVenueData(
     }
   }
 
-  // Apply inferred room type + approximate capacity.
+  // Apply inferred room type + approximate capacity + venue coordinates.
   for (const [code, entry] of Object.entries(venues)) {
     const m = meta[code];
-    if (!m) continue;
-    if (m.maxSize > 0) entry.capacity = m.maxSize;
-    entry.type = classifyRoom(code, m.lessonTypes, m.maxSize);
+    if (m) {
+      if (m.maxSize > 0) entry.capacity = m.maxSize;
+      entry.type = classifyRoom(code, m.lessonTypes, m.maxSize);
+    }
+    const loc = locations[code.toUpperCase()];
+    if (loc) {
+      entry.lat = loc.lat;
+      entry.lng = loc.lng;
+      if (loc.roomName) entry.roomName = loc.roomName;
+      if (typeof loc.floor === "number") entry.floor = loc.floor;
+    }
   }
 
   const matrix: VenueMatrix = {

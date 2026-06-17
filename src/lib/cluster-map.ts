@@ -31,3 +31,16 @@ export function clusterDistance(
   if (!c) return Infinity;
   return Math.sqrt((c.lat - lat) ** 2 + (c.lng - lng) ** 2);
 }
+
+// Distance from a coordinate to a venue, preferring its precise coordinates and
+// falling back to the faculty cluster centroid.
+export function venueDistance(
+  entry: { lat?: number; lng?: number; cluster: string },
+  lat: number,
+  lng: number
+): number {
+  if (typeof entry.lat === "number" && typeof entry.lng === "number") {
+    return Math.sqrt((entry.lat - lat) ** 2 + (entry.lng - lng) ** 2);
+  }
+  return clusterDistance(entry.cluster, lat, lng);
+}

@@ -1,5 +1,13 @@
-const CACHE = "spacefinder-v2";
-const ASSETS = ["/", "/manifest.json", "/venues_timetable.json"];
+const CACHE = "spacefinder-v3";
+const ASSETS = [
+  "/",
+  "/manifest.json",
+  "/venues_timetable.json",
+  "/icon.svg",
+  "/apple-touch-icon.png",
+  "/icon-192.png",
+  "/icon-512.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

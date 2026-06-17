@@ -1,7 +1,7 @@
 import type { VenueMatrix } from "@/types";
 
 // Bump to invalidate all cached data (e.g. when the normalized shape changes).
-export const DATA_SCHEMA_VERSION = 1;
+export const DATA_SCHEMA_VERSION = 2;
 
 const DB_NAME = "spacefinder";
 const STORE = "venue-data";
