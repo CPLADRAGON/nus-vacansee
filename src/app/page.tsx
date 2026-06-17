@@ -169,13 +169,31 @@ export default function Home() {
               NUS <span className="text-nus-orange">Vacansee</span>
             </h1>
           </div>
-          <span className="font-mono text-xs tabular-nums text-white/70">
-            {now.toLocaleTimeString("en-SG", {
-              hour: "2-digit",
-              minute: "2-digit",
-              timeZone: "Asia/Singapore",
-            })}
-          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setFeedbackOpen(true)}
+              aria-label="Send feedback"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-white/20"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path
+                  d="M21 11.5a8.38 8.38 0 01-8.5 8.5 8.5 8.5 0 01-3.8-.9L3 21l1.9-5.7A8.38 8.38 0 014 11.5 8.5 8.5 0 0112.5 3 8.38 8.38 0 0121 11.5z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span className="hidden sm:inline">Feedback</span>
+            </button>
+            <span className="font-mono text-xs tabular-nums text-white/70">
+              {now.toLocaleTimeString("en-SG", {
+                hour: "2-digit",
+                minute: "2-digit",
+                timeZone: "Asia/Singapore",
+              })}
+            </span>
+          </div>
         </div>
       </header>
 
