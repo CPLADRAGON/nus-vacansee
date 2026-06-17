@@ -102,9 +102,6 @@ export default function MapView({ rooms, userLoc, onSelect }: Props) {
                 fillOpacity: 0.95,
               }}
             >
-              <Tooltip direction="top">
-                <span className="font-mono text-[10px] font-semibold">{r.code}</span>
-              </Tooltip>
               <Popup>
                 <div className="min-w-[150px]">
                   <div className="flex items-center justify-between gap-2">

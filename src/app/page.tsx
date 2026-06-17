@@ -345,9 +345,9 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-4 border-t border-zinc-200/60 py-4 text-center text-xs text-zinc-400">
+      <footer className="mt-4 space-y-1 border-t border-zinc-200/60 px-4 py-4 text-center text-xs text-zinc-400">
         <p>
-          Data from{" "}
+          Timetable &amp; venue data from{" "}
           <a
             href="https://nusmods.com"
             target="_blank"
@@ -355,7 +355,17 @@ export default function Home() {
             className="underline hover:text-nus-blue"
           >
             NUSMods
-          </a>
+          </a>{" "}
+          (MIT) · map ©{" "}
+          <a
+            href="https://www.onemap.gov.sg/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-nus-blue"
+          >
+            OneMap
+          </a>{" "}
+          / Singapore Land Authority
           {lastUpdated
             ? ` · updated ${new Date(lastUpdated).toLocaleString("en-SG", {
                 day: "numeric",
@@ -365,13 +375,17 @@ export default function Home() {
               })}`
             : " · offline snapshot"}
         </p>
+        <p className="text-zinc-300">
+          Not affiliated with NUS. Availability is computed from class schedules
+          and may not reflect ad-hoc bookings — please verify on site.
+        </p>
         <button
           onClick={async () => {
             await clearCache();
             refresh();
           }}
           disabled={refreshing}
-          className="mt-2 text-zinc-400 underline hover:text-nus-blue disabled:opacity-50"
+          className="mt-1 text-zinc-400 underline hover:text-nus-blue disabled:opacity-50"
         >
           {refreshing ? "Refreshing…" : "Refresh data / clear cache"}
         </button>

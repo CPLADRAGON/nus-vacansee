@@ -9,7 +9,16 @@ Smart Campus Room Finder (NUS SpaceFinder) — a mobile-first PWA for NUS studen
 - **Framework:** Next.js 16 (React, App Router), deployed on Vercel
 - **Styling:** Tailwind CSS v4, glassmorphic design system with NUS corporate colors
 - **Data Pipeline:** None — fully client-side fetch + normalize (no GitHub Actions, no Python)
-- **Data Source:** NUSMods API v2 `venueInformation.json` (`https://api.nusmods.com/v2/{year}-{year+1}/semesters/{sem}/venueInformation.json`, CORS-enabled)
+- **Data Source:** NUSMods API v2 `venueInformation.json` (`https://api.nusmods.com/v2/{year}-{year+1}/semesters/{sem}/venueInformation.json`, CORS-enabled) for availability, plus NUSMods `venues.json` (per-venue coordinates / room names / floors). Map tiles from OneMap (Singapore Land Authority).
+
+## Attribution & Responsible Use
+
+NUSMods is **MIT-licensed** and provides a public API; we use it responsibly
+(fetch at most once per ~12h, cached, with a static fallback snapshot). The app
+credits NUSMods and OneMap/SLA in the footer, and `ACKNOWLEDGEMENTS.md` contains
+the full MIT notice and data-source disclosures. This project is independent and
+not affiliated with NUS. Keep these credits intact and avoid hammering the
+NUSMods endpoints.
 
 ## Current State
 

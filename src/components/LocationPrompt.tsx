@@ -99,7 +99,7 @@ export default function LocationPrompt({
   }, []);
 
   return (
-    <div className="glass space-y-4 p-4">
+    <div className="glass relative z-30 space-y-4 p-4">
       {/* Auto-detect row */}
       <div className="flex flex-wrap items-center gap-3">
         <button

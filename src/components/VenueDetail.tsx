@@ -1,12 +1,22 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import type { VenueEntry, CalendarEntry } from "@/types";
 import { computeOccupancy, formatTime } from "@/lib/occupancy-engine";
 import { getCurrentWeek } from "@/lib/calendar";
 import { getDestination, mapsUrl } from "@/lib/directions";
 import StatusBadge from "./StatusBadge";
 import WeekGrid from "./WeekGrid";
+
+const VenueMiniMap = dynamic(() => import("./VenueMiniMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[200px] items-center justify-center rounded-lg border border-zinc-200/70 text-xs text-zinc-400">
+      Loading map…
+    </div>
+  ),
+});
 
 interface Props {
   venue: string;
@@ -31,6 +41,10 @@ export default function VenueDetail({
     () => computeOccupancy(entry, now, semester),
     [entry, now, semester]
   );
+  const [showMap, setShowMap] = useState(false);
+
+  const hasCoords =
+    typeof entry.lat === "number" && typeof entry.lng === "number";
 
   const currentWeek = semester ? getCurrentWeek(semester.start) : null;
   const dest = getDestination(venue, entry);
@@ -118,7 +132,7 @@ export default function VenueDetail({
         )}
 
         {/* Directions */}
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
           <a
             href={mapsUrl(dest)}
             target="_blank"
@@ -136,8 +150,27 @@ export default function VenueDetail({
             </svg>
             Directions
           </a>
+          {hasCoords && (
+            <button
+              onClick={() => setShowMap((s) => !s)}
+              aria-expanded={showMap}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-nus-blue/40 px-3 py-2 text-sm font-medium text-nus-blue transition-colors hover:bg-nus-blue/5"
+            >
+              {showMap ? "Hide location" : "Show location"}
+            </button>
+          )}
           <span className="text-xs text-zinc-400">{dest.label}</span>
         </div>
+
+        {hasCoords && showMap && (
+          <div className="mb-4">
+            <VenueMiniMap
+              lat={entry.lat as number}
+              lng={entry.lng as number}
+              label={venue}
+            />
+          </div>
+        )}
 
         {/* Weekly timetable */}
         <div className="mb-1 flex items-center justify-between">
