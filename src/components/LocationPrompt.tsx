@@ -13,6 +13,8 @@ interface Props {
   geoError: string | null;
   activeType: RoomType | null;
   onTypeSelect: (type: RoomType | null) => void;
+  showAll: boolean;
+  onShowAll: () => void;
   minFree: number;
   onMinFreeSelect: (mins: number) => void;
   savedOnly: boolean;
@@ -56,6 +58,8 @@ export default function LocationPrompt({
   geoError,
   activeType,
   onTypeSelect,
+  showAll,
+  onShowAll,
   minFree,
   onMinFreeSelect,
   savedOnly,
@@ -125,19 +129,33 @@ export default function LocationPrompt({
 
       {/* Cluster pills */}
       <div className="flex flex-wrap gap-2">
-        {HARDCODED_PILLS.map((pill) => (
-          <button
-            key={pill.id ?? "__all"}
-            onClick={() => onClusterSelect(pill.id)}
-            className={`rounded-full border px-3.5 py-1 text-sm font-medium transition-all active:scale-[0.97] ${
-              activeCluster === pill.id
-                ? "border-nus-blue bg-nus-blue text-white shadow-sm"
-                : "border-zinc-200 bg-white/60 text-zinc-600 hover:border-nus-blue hover:text-nus-blue"
-            }`}
-          >
-            {pill.label}
-          </button>
-        ))}
+        {HARDCODED_PILLS.map((pill) => {
+          const active =
+            activeCluster === pill.id && !(pill.id === null && showAll);
+          return (
+            <button
+              key={pill.id ?? "__all"}
+              onClick={() => onClusterSelect(pill.id)}
+              className={`rounded-full border px-3.5 py-1 text-sm font-medium transition-all active:scale-[0.97] ${
+                active
+                  ? "border-nus-blue bg-nus-blue text-white shadow-sm"
+                  : "border-zinc-200 bg-white/60 text-zinc-600 hover:border-nus-blue hover:text-nus-blue"
+              }`}
+            >
+              {pill.label}
+            </button>
+          );
+        })}
+        <button
+          onClick={onShowAll}
+          className={`rounded-full border px-3.5 py-1 text-sm font-medium transition-all active:scale-[0.97] ${
+            showAll
+              ? "border-nus-blue bg-nus-blue text-white shadow-sm"
+              : "border-zinc-200 bg-white/60 text-zinc-600 hover:border-nus-blue hover:text-nus-blue"
+          }`}
+        >
+          All venues
+        </button>
       </div>
 
       {/* Room-type filter */}

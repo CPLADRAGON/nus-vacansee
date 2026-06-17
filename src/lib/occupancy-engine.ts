@@ -50,14 +50,22 @@ export function computeOccupancy(
   now: Date,
   semester: CalendarEntry | null
 ): OccupancyInfo {
-  if (!semester) {
-    return { status: "vacant", freeUntil: DAY_END };
-  }
-
-  const dayName = DAY_NAMES[now.getDay()];
   const currentTime =
     String(now.getHours()).padStart(2, "0") +
     String(now.getMinutes()).padStart(2, "0");
+
+  if (!semester) {
+    return {
+      status: "vacant",
+      freeUntil: DAY_END,
+      freeMinutes: minutesBetween(
+        currentTime < DAY_END ? currentTime : DAY_END,
+        DAY_END
+      ),
+    };
+  }
+
+  const dayName = DAY_NAMES[now.getDay()];
   const currentWeek = getCurrentWeek(semester.start);
 
   const slots = (venue as unknown as Record<string, TimetableSlot[] | undefined>)[dayName];

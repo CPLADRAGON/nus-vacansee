@@ -41,6 +41,7 @@ export default function Home() {
   const [roomType, setRoomType] = useState<RoomType | null>(null);
   const [minFree, setMinFree] = useState(0);
   const [savedOnly, setSavedOnly] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [showAllNear, setShowAllNear] = useState(false);
   const [view, setView] = useState<"list" | "map">("list");
   const [detailVenue, setDetailVenue] = useState<[string, VenueEntry] | null>(null);
@@ -100,8 +101,8 @@ export default function Home() {
     [venues, now, semester]
   );
 
-  // Browse mode (a cluster pill, search query, or the saved filter is active).
-  const browsing = Boolean(cluster || search.trim() || savedOnly);
+  // Browse mode (a cluster pill, search query, the saved filter, or all-venues).
+  const browsing = Boolean(cluster || search.trim() || savedOnly || showAll);
 
   // Near-me: all vacant rooms ranked by nearness then longest free block.
   const nearMe = useMemo(() => {
@@ -219,6 +220,13 @@ export default function Home() {
               geoError={geo.error}
               activeType={roomType}
               onTypeSelect={setRoomType}
+              showAll={showAll}
+              onShowAll={() => {
+                setShowAll(true);
+                setCluster(null);
+                setSearch("");
+                setSavedOnly(false);
+              }}
               minFree={minFree}
               onMinFreeSelect={setMinFree}
               savedOnly={savedOnly}
@@ -227,6 +235,7 @@ export default function Home() {
               onClusterSelect={(c) => {
                 setCluster(c);
                 setSearch("");
+                setShowAll(false);
               }}
               onSearchChange={setSearch}
               onAutoDetect={handleAutoDetect}
@@ -266,6 +275,7 @@ export default function Home() {
                 <>
                   <p className="mb-3 text-xs text-zinc-500">
                     {filtered.length} room{filtered.length !== 1 ? "s" : ""}
+                    {showAll ? " · all venues" : ""}
                     {savedOnly ? " saved" : ""}
                     {cluster ? ` in ${cluster}` : ""}
                     {roomType ? ` · ${roomType}` : ""}
