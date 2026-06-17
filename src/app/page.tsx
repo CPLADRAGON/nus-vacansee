@@ -249,6 +249,7 @@ export default function Home() {
               searchQuery={search}
               detectedCluster={detectedCluster}
               geoError={geo.error}
+              geoErrorCode={geo.errorCode}
               activeType={roomType}
               onTypeSelect={setRoomType}
               showAll={showAll}

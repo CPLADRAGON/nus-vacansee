@@ -3,6 +3,8 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { CLUSTERS } from "@/data/clusters";
 import { ROOM_TYPES, type RoomType } from "@/lib/room-classify";
+import { isStandalone } from "@/lib/standalone";
+import type { GeoErrorCode } from "@/hooks/useGeolocation";
 import type { VenueEntry } from "@/types";
 
 interface Props {
@@ -11,6 +13,7 @@ interface Props {
   searchQuery: string;
   detectedCluster: string | null;
   geoError: string | null;
+  geoErrorCode: GeoErrorCode;
   activeType: RoomType | null;
   onTypeSelect: (type: RoomType | null) => void;
   showAll: boolean;
@@ -56,6 +59,7 @@ export default function LocationPrompt({
   searchQuery,
   detectedCluster,
   geoError,
+  geoErrorCode,
   activeType,
   onTypeSelect,
   showAll,
@@ -82,6 +86,18 @@ export default function LocationPrompt({
       .slice(0, 10)
       .map(([code]) => code);
   }, [allVenues, searchQuery]);
+
+  // Context-aware geolocation guidance. A home-screen (standalone) web app has
+  // no address bar, so blocked-location help must point at device Settings.
+  const geoMessage = useMemo(() => {
+    if (!geoError) return null;
+    if (geoErrorCode === "denied") {
+      return isStandalone()
+        ? "Location is off for this app — turn it on in your device Settings (iOS: Settings › Privacy & Security › Location Services), then reopen."
+        : "Location is blocked for this site — tap the lock/ⓘ icon in the address bar, set Location to Allow, then retry.";
+    }
+    return geoError;
+  }, [geoError, geoErrorCode]);
 
   useEffect(() => {
     const handle = (e: MouseEvent) => {
@@ -128,7 +144,7 @@ export default function LocationPrompt({
           </span>
         ) : geoError ? (
           <span className="text-xs text-amber-600">
-            {geoError}{" "}
+            {geoMessage}{" "}
             <button
               onClick={onAutoDetect}
               className="font-medium text-nus-blue underline underline-offset-2"
