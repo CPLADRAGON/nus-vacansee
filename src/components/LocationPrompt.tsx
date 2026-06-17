@@ -105,14 +105,22 @@ export default function LocationPrompt({
         <button
           onClick={onAutoDetect}
           disabled={geoLoading}
-          className="flex items-center gap-2 rounded-lg bg-nus-blue px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-nus-blue/90 active:scale-[0.98] disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-xl bg-nus-blue px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-nus-blue/90 active:scale-[0.98] disabled:opacity-60"
         >
           {geoLoading ? (
             <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
           ) : (
-            <span aria-hidden>📍</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M12 21s-7-6.5-7-11a7 7 0 1114 0c0 4.5-7 11-7 11z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
+              <circle cx="12" cy="10" r="2.5" fill="currentColor" />
+            </svg>
           )}
-          Find rooms near me
+          {geoLoading ? "Locating…" : "Find rooms near me"}
         </button>
         {detectedCluster ? (
           <span className="text-xs text-zinc-500">
@@ -120,7 +128,13 @@ export default function LocationPrompt({
           </span>
         ) : geoError ? (
           <span className="text-xs text-amber-600">
-            Location off — sorted by longest free time
+            {geoError}{" "}
+            <button
+              onClick={onAutoDetect}
+              className="font-medium text-nus-blue underline underline-offset-2"
+            >
+              Retry
+            </button>
           </span>
         ) : (
           <span className="text-xs text-zinc-400">or pick a faculty</span>

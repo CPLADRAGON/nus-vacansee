@@ -161,7 +161,7 @@ export default function Home() {
   return (
     <>
       {/* Brand banner */}
-      <header className="sticky top-0 z-20 border-b border-nus-orange/40 bg-nus-blue shadow-sm">
+      <header className="sticky top-0 z-40 border-b border-nus-orange/40 bg-nus-blue shadow-sm">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <span className="inline-block h-5 w-1.5 rounded-full bg-nus-orange" />

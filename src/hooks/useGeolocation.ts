@@ -2,12 +2,29 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+export type GeoErrorCode =
+  | "denied"
+  | "unavailable"
+  | "timeout"
+  | "unsupported"
+  | "insecure"
+  | null;
+
 interface GeoState {
   lat: number | null;
   lng: number | null;
   loading: boolean;
   error: string | null;
+  errorCode: GeoErrorCode;
 }
+
+const MESSAGES: Record<Exclude<GeoErrorCode, null>, string> = {
+  denied: "Location blocked — enable it in your browser settings, then retry.",
+  unavailable: "Couldn't determine your location right now.",
+  timeout: "Locating timed out — please retry.",
+  unsupported: "Your browser doesn't support location.",
+  insecure: "Location needs a secure (HTTPS) connection.",
+};
 
 export function useGeolocation() {
   const [state, setState] = useState<GeoState>({
@@ -15,19 +32,30 @@ export function useGeolocation() {
     lng: null,
     loading: false,
     error: null,
+    errorCode: null,
   });
 
-  const [manualCluster, setManualCluster] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("spacefinder_cluster");
-  });
+  const setError = useCallback((code: Exclude<GeoErrorCode, null>) => {
+    setState((s) => ({
+      ...s,
+      loading: false,
+      error: MESSAGES[code],
+      errorCode: code,
+    }));
+  }, []);
 
   const requestLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      setState((s) => ({ ...s, error: "Geolocation not supported" }));
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+      setError("unsupported");
       return;
     }
-    setState((s) => ({ ...s, loading: true, error: null }));
+    // Geolocation requires a secure context (HTTPS or localhost).
+    if (typeof window !== "undefined" && window.isSecureContext === false) {
+      setError("insecure");
+      return;
+    }
+
+    setState((s) => ({ ...s, loading: true, error: null, errorCode: null }));
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setState({
@@ -35,27 +63,39 @@ export function useGeolocation() {
           lng: pos.coords.longitude,
           loading: false,
           error: null,
+          errorCode: null,
         });
       },
       (err) => {
-        setState((s) => ({
-          ...s,
-          loading: false,
-          error: err.message || "Location denied",
-        }));
+        const code: Exclude<GeoErrorCode, null> =
+          err.code === err.PERMISSION_DENIED
+            ? "denied"
+            : err.code === err.TIMEOUT
+              ? "timeout"
+              : "unavailable";
+        setError(code);
       },
-      { enableHighAccuracy: false, timeout: 10000 }
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
     );
-  }, []);
+  }, [setError]);
 
-  const setCluster = useCallback((cluster: string | null) => {
-    setManualCluster(cluster);
-    if (cluster) {
-      localStorage.setItem("spacefinder_cluster", cluster);
-    } else {
-      localStorage.removeItem("spacefinder_cluster");
-    }
-  }, []);
+  // Proactively reflect a previously-denied permission so the UI can explain it
+  // without waiting for a failed request.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.permissions?.query) return;
+    let active = true;
+    navigator.permissions
+      .query({ name: "geolocation" as PermissionName })
+      .then((status) => {
+        if (active && status.state === "denied") setError("denied");
+      })
+      .catch(() => {
+        /* Permissions API unavailable — ignore */
+      });
+    return () => {
+      active = false;
+    };
+  }, [setError]);
 
-  return { ...state, manualCluster, requestLocation, setCluster };
+  return { ...state, requestLocation };
 }
