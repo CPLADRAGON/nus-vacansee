@@ -15,10 +15,10 @@ Smart Campus Room Finder (NUS SpaceFinder) — a mobile-first PWA for NUS studen
 
 NUSMods is **MIT-licensed** and provides a public API; we use it responsibly
 (fetch at most once per ~12h, cached, with a static fallback snapshot). The app
-credits NUSMods and OneMap/SLA in the footer, and `ACKNOWLEDGEMENTS.md` contains
-the full MIT notice and data-source disclosures. This project is independent and
-not affiliated with NUS. Keep these credits intact and avoid hammering the
-NUSMods endpoints.
+credits NUSMods and OneMap/SLA in the footer, and the `README.md` Acknowledgements
+section contains the full MIT notice and data-source disclosures. This project is
+independent and not affiliated with NUS. Keep these credits intact and avoid
+hammering the NUSMods endpoints.
 
 ## Current State
 

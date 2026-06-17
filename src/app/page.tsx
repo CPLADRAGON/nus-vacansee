@@ -15,6 +15,7 @@ import { useRecents } from "@/hooks/useRecents";
 import LocationPrompt from "@/components/LocationPrompt";
 import RoomGrid from "@/components/RoomGrid";
 import VenueDetail from "@/components/VenueDetail";
+import FeedbackModal from "@/components/FeedbackModal";
 
 const MapView = dynamic(() => import("@/components/MapView"), {
   ssr: false,
@@ -44,6 +45,7 @@ export default function Home() {
   const [showAll, setShowAll] = useState(false);
   const [showAllNear, setShowAllNear] = useState(false);
   const [view, setView] = useState<"list" | "map">("list");
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [detailVenue, setDetailVenue] = useState<[string, VenueEntry] | null>(null);
   const autoRequested = useRef(false);
 
@@ -389,7 +391,17 @@ export default function Home() {
         >
           {refreshing ? "Refreshing…" : "Refresh data / clear cache"}
         </button>
+        <span className="px-1 text-zinc-300">·</span>
+        <button
+          onClick={() => setFeedbackOpen(true)}
+          className="text-zinc-400 underline hover:text-nus-blue"
+        >
+          Send feedback
+        </button>
       </footer>
+
+      {/* Feedback modal */}
+      {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
 
       {/* Venue detail modal */}
       {detailVenue && (
