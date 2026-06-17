@@ -13,10 +13,20 @@ interface Props {
   entry: VenueEntry;
   now: Date;
   semester: CalendarEntry | null;
+  isFavorite?: boolean;
+  onToggleFavorite?: (venue: string) => void;
   onClose: () => void;
 }
 
-export default function VenueDetail({ venue, entry, now, semester, onClose }: Props) {
+export default function VenueDetail({
+  venue,
+  entry,
+  now,
+  semester,
+  isFavorite,
+  onToggleFavorite,
+  onClose,
+}: Props) {
   const occupancy = useMemo(
     () => computeOccupancy(entry, now, semester),
     [entry, now, semester]
@@ -59,14 +69,36 @@ export default function VenueDetail({ venue, entry, now, semester, onClose }: Pr
               ) : null}
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-full p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1">
+            {onToggleFavorite && (
+              <button
+                onClick={() => onToggleFavorite(venue)}
+                aria-label={isFavorite ? "Remove from saved" : "Save room"}
+                aria-pressed={isFavorite}
+                className="rounded-full p-1 transition-transform active:scale-90"
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill={isFavorite ? "#EF7C00" : "none"}
+                  stroke={isFavorite ? "#EF7C00" : "#A1A1AA"}
+                  strokeWidth="2"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 17.3l-5.4 3.1 1.4-6.1-4.7-4.1 6.2-.5L12 4l2.5 5.7 6.2.5-4.7 4.1 1.4 6.1z" />
+                </svg>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="rounded-full p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Current status */}

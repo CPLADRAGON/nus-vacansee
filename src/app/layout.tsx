@@ -9,13 +9,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "NUS SpaceFinder",
+  title: "NUS Vacansee",
   description:
-    "Find available rooms on NUS campus in real time. Smart Campus Room Finder.",
+    "See what's free, now — find available rooms on NUS campus in real time.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "SpaceFinder",
+    title: "Vacansee",
   },
   icons: {
     icon: [

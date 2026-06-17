@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import dynamic from "next/dynamic";
 import type { VenueEntry } from "@/types";
 import { useVenueData } from "@/hooks/useVenueData";
 import { useGeolocation } from "@/hooks/useGeolocation";
@@ -9,24 +10,54 @@ import { getCurrentSemester } from "@/lib/calendar";
 import { findNearestCluster, venueDistance } from "@/lib/cluster-map";
 import { clearCache } from "@/lib/venue-cache";
 import type { RoomType } from "@/lib/room-classify";
+import { useFavorites } from "@/hooks/useFavorites";
+import { useRecents } from "@/hooks/useRecents";
 import LocationPrompt from "@/components/LocationPrompt";
 import RoomGrid from "@/components/RoomGrid";
 import VenueDetail from "@/components/VenueDetail";
 
+const MapView = dynamic(() => import("@/components/MapView"), {
+  ssr: false,
+  loading: () => (
+    <div className="glass py-12 text-center text-sm text-zinc-400">
+      Loading map…
+    </div>
+  ),
+});
+
 const NEAR_ME_LIMIT = 60;
+const MAP_PIN_LIMIT = 200;
 
 export default function Home() {
   const { data, venues, loading, error, refreshing, lastUpdated, refresh } =
     useVenueData();
   const geo = useGeolocation();
+  const { favorites, toggle: toggleFavorite, isFavorite } = useFavorites();
+  const { push: pushRecent } = useRecents();
 
   const [now, setNow] = useState<Date>(() => getSingaporeTime());
   const [cluster, setCluster] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [roomType, setRoomType] = useState<RoomType | null>(null);
+  const [minFree, setMinFree] = useState(0);
+  const [savedOnly, setSavedOnly] = useState(false);
   const [showAllNear, setShowAllNear] = useState(false);
+  const [view, setView] = useState<"list" | "map">("list");
   const [detailVenue, setDetailVenue] = useState<[string, VenueEntry] | null>(null);
   const autoRequested = useRef(false);
+
+  const userLoc = useMemo(
+    () => (geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null),
+    [geo.lat, geo.lng]
+  );
+
+  const openDetail = useCallback(
+    (v: string, e: VenueEntry) => {
+      setDetailVenue([v, e]);
+      pushRecent(v);
+    },
+    [pushRecent]
+  );
 
   // Live clock tick
   useEffect(() => {
@@ -69,14 +100,16 @@ export default function Home() {
     [venues, now, semester]
   );
 
-  // Browse mode (a cluster pill or search query is active).
-  const browsing = Boolean(cluster || search.trim());
+  // Browse mode (a cluster pill, search query, or the saved filter is active).
+  const browsing = Boolean(cluster || search.trim() || savedOnly);
 
   // Near-me: all vacant rooms ranked by nearness then longest free block.
   const nearMe = useMemo(() => {
     const hasGeo = geo.lat != null && geo.lng != null;
     let vacant = withOccupancy.filter((v) => v.occ.status === "vacant");
     if (roomType) vacant = vacant.filter((v) => v.entry.type === roomType);
+    if (minFree > 0)
+      vacant = vacant.filter((v) => (v.occ.freeMinutes ?? 0) >= minFree);
     vacant.sort((a, b) => {
       if (hasGeo) {
         const da = venueDistance(a.entry, geo.lat!, geo.lng!);
@@ -89,13 +122,18 @@ export default function Home() {
       return a.code.localeCompare(b.code);
     });
     return vacant;
-  }, [withOccupancy, geo.lat, geo.lng, roomType]);
+  }, [withOccupancy, geo.lat, geo.lng, roomType, minFree]);
 
-  // Browse filter: cluster + fuzzy search.
+  // Browse filter: cluster + fuzzy search + saved + type + duration.
   const filtered = useMemo(() => {
     let result = withOccupancy;
     if (cluster) result = result.filter((v) => v.entry.cluster === cluster);
     if (roomType) result = result.filter((v) => v.entry.type === roomType);
+    if (savedOnly) result = result.filter((v) => favorites.has(v.code));
+    if (minFree > 0)
+      result = result.filter(
+        (v) => v.occ.status === "vacant" && (v.occ.freeMinutes ?? 0) >= minFree
+      );
     if (search.trim()) {
       const q = search.trim().toUpperCase();
       result = result.filter((v) => v.code.toUpperCase().includes(q));
@@ -106,9 +144,16 @@ export default function Home() {
       if (r !== 0) return r;
       return a.code.localeCompare(b.code);
     });
-  }, [withOccupancy, cluster, search, roomType]);
+  }, [withOccupancy, cluster, search, roomType, savedOnly, minFree, favorites]);
 
   const nearShown = showAllNear ? nearMe : nearMe.slice(0, NEAR_ME_LIMIT);
+
+  const mapRooms = useMemo(() => {
+    const src = browsing ? filtered : nearMe;
+    return src
+      .slice(0, MAP_PIN_LIMIT)
+      .map((v) => ({ code: v.code, entry: v.entry, status: v.occ.status }));
+  }, [browsing, filtered, nearMe]);
 
   return (
     <>
@@ -118,7 +163,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <span className="inline-block h-5 w-1.5 rounded-full bg-nus-orange" />
             <h1 className="text-lg font-bold tracking-tight text-white">
-              NUS <span className="text-nus-orange">SpaceFinder</span>
+              NUS <span className="text-nus-orange">Vacansee</span>
             </h1>
           </div>
           <span className="font-mono text-xs tabular-nums text-white/70">
@@ -174,6 +219,11 @@ export default function Home() {
               geoError={geo.error}
               activeType={roomType}
               onTypeSelect={setRoomType}
+              minFree={minFree}
+              onMinFreeSelect={setMinFree}
+              savedOnly={savedOnly}
+              onToggleSaved={() => setSavedOnly((s) => !s)}
+              savedCount={favorites.size}
               onClusterSelect={(c) => {
                 setCluster(c);
                 setSearch("");
@@ -183,22 +233,58 @@ export default function Home() {
               geoLoading={geo.loading}
             />
 
+            {/* View toggle */}
+            <div className="mt-4 flex justify-end">
+              <div className="inline-flex rounded-full border border-zinc-200 bg-white/60 p-0.5 text-xs font-medium">
+                {(["list", "map"] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setView(v)}
+                    className={`rounded-full px-3 py-1 capitalize transition-colors ${
+                      view === v
+                        ? "bg-nus-blue text-white"
+                        : "text-zinc-500 hover:text-nus-blue"
+                    }`}
+                  >
+                    {v}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Results */}
-            <div className="mt-4">
-              {browsing ? (
+            <div className="mt-3">
+              {view === "map" ? (
+                <>
+                  <p className="mb-3 text-xs text-zinc-500">
+                    {mapRooms.length} room{mapRooms.length !== 1 ? "s" : ""} on map
+                    {browsing ? "" : " · free now"}
+                  </p>
+                  <MapView rooms={mapRooms} userLoc={userLoc} onSelect={openDetail} />
+                </>
+              ) : browsing ? (
                 <>
                   <p className="mb-3 text-xs text-zinc-500">
                     {filtered.length} room{filtered.length !== 1 ? "s" : ""}
+                    {savedOnly ? " saved" : ""}
                     {cluster ? ` in ${cluster}` : ""}
                     {roomType ? ` · ${roomType}` : ""}
+                    {minFree ? ` · free ≥ ${minFree / 60}h` : ""}
                     {search ? ` matching “${search}”` : ""}
                   </p>
                   <RoomGrid
                     venues={filtered.map((v) => [v.code, v.entry])}
                     now={now}
                     semester={semester}
-                    emptyMessage="No rooms match your search."
-                    onVenueSelect={(v, e) => setDetailVenue([v, e])}
+                    userLoc={userLoc}
+                    isFavorite={isFavorite}
+                    onToggleFavorite={toggleFavorite}
+                    emptyMessage={
+                      savedOnly
+                        ? "No saved rooms yet — tap the ★ on a room to save it."
+                        : "No rooms match your search."
+                    }
+                    onVenueSelect={openDetail}
                   />
                 </>
               ) : (
@@ -213,6 +299,7 @@ export default function Home() {
                           ? `${nearMe.length} free · nearest: ${detectedCluster}`
                           : `${nearMe.length} free · enable location to sort by nearness`}
                         {roomType ? ` · ${roomType}` : ""}
+                        {minFree ? ` · ≥ ${minFree / 60}h` : ""}
                       </p>
                     </div>
                   </div>
@@ -221,8 +308,11 @@ export default function Home() {
                     venues={nearShown.map((v) => [v.code, v.entry])}
                     now={now}
                     semester={semester}
+                    userLoc={userLoc}
+                    isFavorite={isFavorite}
+                    onToggleFavorite={toggleFavorite}
                     emptyMessage="No free rooms right now."
-                    onVenueSelect={(v, e) => setDetailVenue([v, e])}
+                    onVenueSelect={openDetail}
                   />
 
                   {nearMe.length > NEAR_ME_LIMIT && (
@@ -284,6 +374,8 @@ export default function Home() {
           entry={detailVenue[1]}
           now={now}
           semester={semester}
+          isFavorite={isFavorite(detailVenue[0])}
+          onToggleFavorite={toggleFavorite}
           onClose={() => setDetailVenue(null)}
         />
       )}

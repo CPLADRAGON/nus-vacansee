@@ -13,6 +13,11 @@ interface Props {
   geoError: string | null;
   activeType: RoomType | null;
   onTypeSelect: (type: RoomType | null) => void;
+  minFree: number;
+  onMinFreeSelect: (mins: number) => void;
+  savedOnly: boolean;
+  onToggleSaved: () => void;
+  savedCount: number;
   onClusterSelect: (cluster: string | null) => void;
   onSearchChange: (q: string) => void;
   onAutoDetect: () => void;
@@ -26,6 +31,13 @@ const TYPE_LABELS: Record<RoomType, string> = {
   "Seminar Room": "Seminar",
   Classroom: "Classroom",
 };
+
+const DURATIONS = [
+  { mins: 0, label: "Any time" },
+  { mins: 60, label: "≥ 1h" },
+  { mins: 120, label: "≥ 2h" },
+  { mins: 180, label: "≥ 3h" },
+];
 
 const HARDCODED_PILLS = [
   { id: null, label: "Near me" },
@@ -44,6 +56,11 @@ export default function LocationPrompt({
   geoError,
   activeType,
   onTypeSelect,
+  minFree,
+  onMinFreeSelect,
+  savedOnly,
+  onToggleSaved,
+  savedCount,
   onClusterSelect,
   onSearchChange,
   onAutoDetect,
@@ -148,6 +165,34 @@ export default function LocationPrompt({
             {TYPE_LABELS[t]}
           </button>
         ))}
+      </div>
+
+      {/* Duration + saved filters */}
+      <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1">
+        {DURATIONS.map((d) => (
+          <button
+            key={d.mins}
+            onClick={() => onMinFreeSelect(d.mins)}
+            className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-all active:scale-[0.97] ${
+              minFree === d.mins
+                ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                : "border-zinc-200 bg-white/60 text-zinc-500 hover:border-emerald-500 hover:text-emerald-700"
+            }`}
+          >
+            {d.label}
+          </button>
+        ))}
+        <span className="mx-0.5 h-4 w-px shrink-0 bg-zinc-200" />
+        <button
+          onClick={onToggleSaved}
+          className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-all active:scale-[0.97] ${
+            savedOnly
+              ? "border-nus-orange bg-nus-orange/10 text-nus-orange"
+              : "border-zinc-200 bg-white/60 text-zinc-500 hover:border-nus-orange hover:text-nus-orange"
+          }`}
+        >
+          ★ Saved{savedCount ? ` (${savedCount})` : ""}
+        </button>
       </div>
 
       {/* Search */}

@@ -7,6 +7,9 @@ interface Props {
   venues: [string, VenueEntry][];
   now: Date;
   semester: CalendarEntry | null;
+  userLoc: { lat: number; lng: number } | null;
+  isFavorite?: (venue: string) => boolean;
+  onToggleFavorite?: (venue: string) => void;
   emptyMessage?: string;
   onVenueSelect: (venue: string, entry: VenueEntry) => void;
 }
@@ -15,6 +18,9 @@ export default function RoomGrid({
   venues,
   now,
   semester,
+  userLoc,
+  isFavorite,
+  onToggleFavorite,
   emptyMessage,
   onVenueSelect,
 }: Props) {
@@ -37,6 +43,9 @@ export default function RoomGrid({
           entry={entry}
           now={now}
           semester={semester}
+          userLoc={userLoc}
+          isFavorite={isFavorite?.(code)}
+          onToggleFavorite={onToggleFavorite}
           onSelect={onVenueSelect}
         />
       ))}
