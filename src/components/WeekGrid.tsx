@@ -147,20 +147,6 @@ export default function WeekGrid({ entry, now, semester }: Props) {
 
   return (
     <div>
-      <div className="mb-2 flex items-center gap-3 text-[10px] text-zinc-500">
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-nus-blue/90" />
-          Booked
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-emerald-100 ring-1 ring-emerald-200" />
-          Free
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2.5 w-0.5 bg-nus-orange" />
-          Now
-        </span>
-      </div>
       <div className="overflow-x-auto rounded-lg border border-zinc-200/70 bg-white/40">
         <div style={{ minWidth: DAY_COL + trackWidth }}>
           {/* Hour header */}
@@ -205,13 +191,10 @@ export default function WeekGrid({ entry, now, semester }: Props) {
                 </div>
 
                 <div className="relative" style={{ width: trackWidth, height: rowH }}>
-                  {/* Free canvas: emerald base = available time */}
-                  <span className="absolute inset-0 bg-emerald-50" />
-
                   {/* Dim past hours on today */}
                   {isToday && showNow && (
                     <span
-                      className="absolute inset-y-0 left-0 bg-zinc-900/[0.06]"
+                      className="absolute inset-y-0 left-0 bg-zinc-900/[0.04]"
                       style={{ width: `${pct(nowMin)}%` }}
                     />
                   )}
@@ -220,15 +203,15 @@ export default function WeekGrid({ entry, now, semester }: Props) {
                   {hours.slice(1, -1).map((h, i) => (
                     <span
                       key={h}
-                      className="absolute inset-y-0 w-px bg-emerald-100"
+                      className="absolute inset-y-0 w-px bg-zinc-100"
                       style={{ left: `${((i + 1) / (hours.length - 1)) * 100}%` }}
                     />
                   ))}
 
                   {/* Free-all-day label */}
                   {!layout && (
-                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium uppercase tracking-wider text-emerald-600/60">
-                      Free all day
+                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium uppercase tracking-wider text-zinc-300">
+                      Free
                     </span>
                   )}
 
@@ -244,7 +227,7 @@ export default function WeekGrid({ entry, now, semester }: Props) {
                         onClick={() => setSelected({ day, slot: s })}
                         title={`${s.module} · ${formatTime(s.start)}–${formatTime(s.end)}`}
                         aria-label={`${s.module} from ${formatTime(s.start)} to ${formatTime(s.end)} on ${day}`}
-                        className={`absolute overflow-hidden rounded px-1 text-left font-mono text-[10px] leading-tight text-white shadow-sm transition-shadow ${
+                        className={`absolute overflow-hidden rounded px-1 text-left font-mono text-[10px] leading-tight text-white transition-shadow ${
                           isSel
                             ? "z-10 bg-nus-blue ring-2 ring-nus-orange"
                             : "bg-nus-blue/90 hover:bg-nus-blue"
