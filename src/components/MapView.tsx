@@ -8,9 +8,8 @@ import {
   Tooltip,
   Popup,
   useMap,
-  useMapEvents,
 } from "react-leaflet";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import type { VenueEntry, OccupancyStatus } from "@/types";
 import { getDestination, mapsUrl } from "@/lib/directions";
 
@@ -27,7 +26,6 @@ interface Props {
 }
 
 const NUS_CENTER = { lat: 1.2966, lng: 103.7764 };
-const LABEL_ZOOM = 17;
 
 const STATUS_COLOR: Record<OccupancyStatus, string> = {
   vacant: "#10B981",
@@ -49,33 +47,29 @@ function Recenter({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
-function ZoomWatch({ onZoom }: { onZoom: (z: number) => void }) {
-  const map = useMapEvents({ zoomend: () => onZoom(map.getZoom()) });
-  return null;
-}
-
 export default function MapView({ rooms, userLoc, onSelect }: Props) {
   const center = userLoc ?? NUS_CENTER;
-  const [zoom, setZoom] = useState(16);
   const pins = rooms.filter(
     (r) => typeof r.entry.lat === "number" && typeof r.entry.lng === "number"
   );
-  const showLabels = zoom >= LABEL_ZOOM;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-zinc-200/70" style={{ height: "65vh" }}>
+    <div
+      className="isolate overflow-hidden rounded-2xl border border-zinc-200/70"
+      style={{ height: "65vh" }}
+    >
       <MapContainer
         center={[center.lat, center.lng]}
-        zoom={16}
+        zoom={17}
+        maxZoom={19}
         scrollWheelZoom
         style={{ height: "100%", width: "100%" }}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.onemap.gov.sg/">OneMap</a> &copy; Singapore Land Authority'
+          url="https://www.onemap.gov.sg/maps/tiles/Default/{z}/{x}/{y}.png"
+          maxZoom={19}
         />
-
-        <ZoomWatch onZoom={setZoom} />
 
         {userLoc && <Recenter lat={userLoc.lat} lng={userLoc.lng} />}
 
@@ -108,11 +102,9 @@ export default function MapView({ rooms, userLoc, onSelect }: Props) {
                 fillOpacity: 0.95,
               }}
             >
-              {showLabels && (
-                <Tooltip permanent direction="top" offset={[0, -6]}>
-                  <span className="font-mono text-[10px] font-semibold">{r.code}</span>
-                </Tooltip>
-              )}
+              <Tooltip direction="top">
+                <span className="font-mono text-[10px] font-semibold">{r.code}</span>
+              </Tooltip>
               <Popup>
                 <div className="min-w-[150px]">
                   <div className="flex items-center justify-between gap-2">

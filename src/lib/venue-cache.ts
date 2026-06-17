@@ -102,5 +102,14 @@ export async function clearCache(): Promise<void> {
   } catch {
     /* ignore */
   }
+  // Unregister the service worker so a stale app shell can't keep serving old code.
+  try {
+    if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+  } catch {
+    /* ignore */
+  }
   void SW_CACHE;
 }

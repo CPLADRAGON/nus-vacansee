@@ -1,4 +1,4 @@
-const CACHE = "spacefinder-v3";
+const CACHE = "spacefinder-v4";
 const ASSETS = [
   "/",
   "/manifest.json",
@@ -20,11 +20,27 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
 
-  // Only cache same-origin assets. Live NUSMods data is cached in IndexedDB
-  // by the app, so we don't duplicate the large cross-origin payload here.
   const sameOrigin = new URL(request.url).origin === self.location.origin;
   if (!sameOrigin) return;
 
+  // Navigation/document requests: network-first so new deployments are picked
+  // up immediately; fall back to cached shell when offline.
+  if (request.mode === "navigate" || request.destination === "document") {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(request, clone));
+          return response;
+        })
+        .catch(() =>
+          caches.match(request).then((m) => m || caches.match("/"))
+        )
+    );
+    return;
+  }
+
+  // Static assets (hashed chunks, icons, json): stale-while-revalidate.
   event.respondWith(
     caches.match(request).then((cached) => {
       const fetchPromise = fetch(request)
