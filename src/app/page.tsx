@@ -68,11 +68,22 @@ export default function Home() {
     return () => clearInterval(id);
   }, []);
 
-  // Auto-request location on first visit so "near me" works immediately.
+  // Auto-locate ONLY if permission was already granted (silent, no prompt).
+  // For "ask"/unknown states we wait for the user to tap the button — a real
+  // user gesture reliably triggers the browser's permission prompt, whereas a
+  // gesture-less request on load is often auto-denied by the browser.
   useEffect(() => {
     if (autoRequested.current) return;
     autoRequested.current = true;
-    geo.requestLocation();
+    if (typeof navigator === "undefined" || !navigator.permissions?.query) return;
+    navigator.permissions
+      .query({ name: "geolocation" as PermissionName })
+      .then((status) => {
+        if (status.state === "granted") geo.requestLocation();
+      })
+      .catch(() => {
+        /* Permissions API unavailable — wait for the button tap */
+      });
   }, [geo]);
 
   const handleAutoDetect = useCallback(() => {
