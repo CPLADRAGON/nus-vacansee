@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 
 export type GeoErrorCode =
   | "denied"
@@ -77,24 +77,6 @@ export function useGeolocation() {
       },
       { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
     );
-  }, [setError]);
-
-  // Proactively reflect a previously-denied permission so the UI can explain it
-  // without waiting for a failed request.
-  useEffect(() => {
-    if (typeof navigator === "undefined" || !navigator.permissions?.query) return;
-    let active = true;
-    navigator.permissions
-      .query({ name: "geolocation" as PermissionName })
-      .then((status) => {
-        if (active && status.state === "denied") setError("denied");
-      })
-      .catch(() => {
-        /* Permissions API unavailable — ignore */
-      });
-    return () => {
-      active = false;
-    };
   }, [setError]);
 
   return { ...state, requestLocation };
