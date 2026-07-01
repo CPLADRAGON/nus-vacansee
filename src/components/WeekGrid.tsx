@@ -25,7 +25,7 @@ const DAY_SHORT: Record<string, string> = {
 
 const HOUR_W = 52; // px per hour in the scrollable time track
 const DAY_COL = 44; // px width of the sticky day-label column
-const LANE_H = 22; // px per stacked lane within a day row
+const LANE_H = 26; // px per stacked lane within a day row
 
 interface LaneItem {
   slot: TimetableSlot;
@@ -183,12 +183,57 @@ export default function WeekGrid({ entry, now, semester }: Props) {
   } | null>(null);
 
   const nowMin = now.getHours() * 60 + now.getMinutes();
-  const showNow = nowMin >= winStart && nowMin <= winEnd;
+  const showNow = isCurrentView && nowMin >= winStart && nowMin <= winEnd;
   const nowLabel = now.toLocaleTimeString("en-SG", {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "Asia/Singapore",
   });
+
+  // ISO date helpers (local SG calendar day, matching how slot.dates are stored).
+  const isoLocal = (d: Date) =>
+    d.getFullYear() +
+    "-" +
+    String(d.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(d.getDate()).padStart(2, "0");
+  const todayISO = isoLocal(now);
+  // The set of ISO dates in the current Mon–Sun week (for special-term slots).
+  const weekDates = useMemo(() => {
+    const dow = now.getDay() === 0 ? 6 : now.getDay() - 1;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - dow);
+    const set = new Set<string>();
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      set.add(isoLocal(d));
+    }
+    return set;
+  }, [now]);
+
+  // Classify a block relative to *now* so the grid is honest: only sessions that
+  // actually run this week/today look booked; recurring-schedule entries that
+  // aren't happening now (other weeks, other dates, or another semester's
+  // "Full semester" view) render as a muted reference outline.
+  type SlotState = "live" | "week" | "reference";
+  const slotState = (s: TimetableSlot, day: string): SlotState => {
+    if (!isCurrentView) return "reference";
+    let inWeek: boolean;
+    let onToday: boolean;
+    if (s.dates && s.dates.length > 0) {
+      inWeek = s.dates.some((d) => weekDates.has(d));
+      onToday = s.dates.includes(todayISO);
+    } else {
+      inWeek = currentWeek > 0 && s.weeks.includes(currentWeek);
+      onToday = inWeek && day === todayName;
+    }
+    if (onToday && day === todayName) {
+      const inNow = nowMin >= toMin(s.start) && nowMin < toMin(s.end);
+      if (inNow) return "live";
+    }
+    return inWeek ? "week" : "reference";
+  };
 
   return (
     <div>
@@ -252,7 +297,7 @@ export default function WeekGrid({ entry, now, semester }: Props) {
             const layout = byDay[day];
             const lanes = layout?.lanes ?? 1;
             const rowH = Math.max(44, lanes * LANE_H + 8);
-            const isToday = day === todayName;
+            const isToday = day === todayName && isCurrentView;
             return (
               <div
                 key={day}
@@ -301,18 +346,23 @@ export default function WeekGrid({ entry, now, semester }: Props) {
                     const isSel =
                       selected?.day === day && selected?.slot === s;
                     const cls = classLabelFull(s);
-                    const tall = 100 / lanes >= 50; // room for a 2nd line?
+                    const state = slotState(s, day);
+                    const solid = state === "live" || state === "week";
+                    const base =
+                      state === "live"
+                        ? "bg-nus-blue text-white ring-2 ring-nus-orange z-10"
+                        : state === "week"
+                          ? "bg-nus-blue/90 text-white hover:bg-nus-blue"
+                          : "border border-dashed border-nus-blue/40 bg-nus-blue/5 text-nus-blue/70 hover:bg-nus-blue/10";
+                    const selRing = isSel ? "z-10 ring-2 ring-nus-orange" : "";
+                    const labelColor = solid ? "text-white/70" : "text-nus-blue/50";
                     return (
                       <button
                         key={`${s.start}-${s.module}-${i}`}
                         onClick={() => setSelected({ day, slot: s })}
-                        title={`${s.module}${cls ? ` (${cls})` : ""} · ${formatTime(s.start)}–${formatTime(s.end)}`}
-                        aria-label={`${s.module} ${cls} from ${formatTime(s.start)} to ${formatTime(s.end)} on ${day}`}
-                        className={`absolute overflow-hidden rounded px-1 text-left font-mono text-[10px] leading-tight text-white transition-shadow ${
-                          isSel
-                            ? "z-10 bg-nus-blue ring-2 ring-nus-orange"
-                            : "bg-nus-blue/90 hover:bg-nus-blue"
-                        }`}
+                        title={`${s.module}${cls ? ` (${cls})` : ""} · ${formatTime(s.start)}–${formatTime(s.end)}${state === "reference" ? " · not on this week" : state === "live" ? " · on now" : ""}`}
+                        aria-label={`${s.module} ${cls} from ${formatTime(s.start)} to ${formatTime(s.end)} on ${day}${state === "live" ? ", on now" : state === "reference" ? ", not on this week" : ""}`}
+                        className={`absolute overflow-hidden rounded px-1 text-left font-mono text-[10px] leading-tight transition-shadow ${base} ${selRing}`}
                         style={{
                           left: `${left}%`,
                           width: `calc(${width}% - 2px)`,
@@ -320,10 +370,21 @@ export default function WeekGrid({ entry, now, semester }: Props) {
                           height: `calc(${100 / lanes}% - 6px)`,
                         }}
                       >
-                        <span className="block truncate">{s.module}</span>
-                        {tall && classLabel(s) && (
-                          <span className="block truncate text-[8px] text-white/70">
-                            {classLabel(s)}
+                        {lanes === 1 ? (
+                          <>
+                            <span className="block truncate">{s.module}</span>
+                            {classLabel(s) && (
+                              <span className={`block truncate text-[8px] ${labelColor}`}>
+                                {classLabel(s)}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="block truncate">
+                            {s.module}
+                            {classLabel(s) && (
+                              <span className={labelColor}> · {classLabel(s)}</span>
+                            )}
                           </span>
                         )}
                       </button>

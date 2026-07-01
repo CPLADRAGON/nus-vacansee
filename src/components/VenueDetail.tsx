@@ -128,6 +128,12 @@ export default function VenueDetail({
             {occupancy.currentModule}
             {occupancy.currentClass ? ` · ${occupancy.currentClass}` : ""} · ends{" "}
             {formatTime(occupancy.until)}
+            {occupancy.freeAt && (
+              <span className="text-emerald-600">
+                {" "}
+                · free from {formatTime(occupancy.freeAt)}
+              </span>
+            )}
           </p>
         )}
 
@@ -177,7 +183,8 @@ export default function VenueDetail({
           Weekly Timetable
         </h3>
         <p className="mb-3 text-[11px] text-zinc-400">
-          Blue = booked · empty = free. Tap a class for details.
+          Solid = booked this week · outline = scheduled another week · empty =
+          free. Tap a class for details.
         </p>
 
         <WeekGrid entry={entry} now={now} semester={semester} />

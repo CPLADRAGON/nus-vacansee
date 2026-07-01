@@ -45,6 +45,11 @@ export interface OccupancyInfo {
   // For vacant rooms: when the free block ends and how long it lasts (minutes).
   freeUntil?: string;
   freeMinutes?: number;
+  // For occupied/crunch rooms: when the room next becomes free (after any
+  // back-to-back classes) and how long that free block lasts. freeAt is absent
+  // when the room stays booked until the end of the campus day.
+  freeAt?: string;
+  freeForMinutes?: number;
 }
 
 export interface VenueMatrix {

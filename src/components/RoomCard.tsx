@@ -88,9 +88,17 @@ export default function RoomCard({
             {occupancy.currentClass && (
               <span className="text-zinc-500"> · {occupancy.currentClass}</span>
             )}
-            {occupancy.until && (
-              <span className="text-zinc-400"> · ends {formatTime(occupancy.until)}</span>
-            )}
+            {occupancy.freeAt ? (
+              <span className="text-emerald-600">
+                {" "}
+                · free at {formatTime(occupancy.freeAt)}
+                {occupancy.freeForMinutes
+                  ? ` for ${formatDuration(occupancy.freeForMinutes)}`
+                  : ""}
+              </span>
+            ) : occupancy.until ? (
+              <span className="text-zinc-400"> · booked rest of day</span>
+            ) : null}
           </p>
         )}
 

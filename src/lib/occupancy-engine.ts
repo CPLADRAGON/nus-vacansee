@@ -112,11 +112,31 @@ export function computeOccupancy(
   for (const slot of activeSlots) {
     if (currentTime >= slot.start && currentTime < slot.end) {
       const status = isCrunchHour(currentTime) ? "crunch" : "occupied";
+      // Chain any back-to-back / overlapping classes so "free at" reflects when
+      // the room is *actually* free, not merely when this one class ends.
+      let busyEnd = slot.end;
+      let extended = true;
+      while (extended) {
+        extended = false;
+        for (const s of activeSlots) {
+          if (s.start <= busyEnd && s.end > busyEnd) {
+            busyEnd = s.end;
+            extended = true;
+          }
+        }
+      }
+      const nextAfter = activeSlots
+        .filter((s) => s.start >= busyEnd)
+        .sort((a, b) => a.start.localeCompare(b.start))[0];
+      const freeUntilNext = nextAfter ? nextAfter.start : DAY_END;
+      const freeForMinutes = minutesBetween(busyEnd, freeUntilNext);
       return {
         status,
         currentModule: slot.module,
         currentClass: classLabelFull(slot) || undefined,
         until: slot.end,
+        freeAt: busyEnd < DAY_END ? busyEnd : undefined,
+        freeForMinutes: busyEnd < DAY_END ? freeForMinutes : undefined,
       };
     }
   }
