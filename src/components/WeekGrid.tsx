@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import type { VenueEntry, TimetableSlot, CalendarEntry } from "@/types";
 import { formatTime } from "@/lib/occupancy-engine";
 import { getCurrentWeek } from "@/lib/calendar";
@@ -92,24 +92,40 @@ export default function WeekGrid({ entry, now, semester }: Props) {
   const currentWeek = semester ? getCurrentWeek(semester.start) : null;
   const todayName = DAYS[now.getDay() === 0 ? 6 : now.getDay() - 1];
 
-  // Active slots per day (current semester + week), packed into lanes.
+  // Which semesters does this venue actually have classes in?
+  const availableSems = useMemo(() => {
+    const set = new Set<number>();
+    for (const day of [...DAYS, "Sunday"]) {
+      const slots = (entry as unknown as Record<string, TimetableSlot[] | undefined>)[day];
+      if (slots) for (const s of slots) set.add(s.semester);
+    }
+    return [...set].sort((a, b) => a - b);
+  }, [entry]);
+
+  // Semester currently shown. Default to the active semester, else the first
+  // one this venue has data for. Reset the user's choice when the venue changes.
+  const [override, setOverride] = useState<number | null>(null);
+  useEffect(() => setOverride(null), [entry]);
+  const viewSem = override ?? semester?.semester ?? availableSems[0] ?? 1;
+  const isCurrentView = semester?.semester === viewSem;
+
+  // Active slots for the shown semester, packed into lanes. This never mixes
+  // semesters. The teaching-week filter only applies when we're actually in the
+  // shown semester; otherwise the full semester schedule is displayed.
   const byDay = useMemo(() => {
     const map: Record<string, DayLayout> = {};
-    const days = [...DAYS, "Sunday"];
-    for (const day of days) {
+    for (const day of [...DAYS, "Sunday"]) {
       const slots = (entry as unknown as Record<string, TimetableSlot[] | undefined>)[day];
       if (!slots) continue;
-      const active = semester
-        ? slots.filter(
-            (s) =>
-              s.semester === semester.semester &&
-              (currentWeek ? s.weeks.includes(currentWeek) : true)
-          )
-        : slots;
+      const active = slots.filter((s) => {
+        if (s.semester !== viewSem) return false;
+        if (isCurrentView && currentWeek) return s.weeks.includes(currentWeek);
+        return true;
+      });
       if (active.length) map[day] = packLanes(active);
     }
     return map;
-  }, [entry, semester, currentWeek]);
+  }, [entry, viewSem, isCurrentView, currentWeek]);
 
   // Time window: default 08:00–22:00, expanded to fit any out-of-range class.
   const { winStart, winEnd, hours } = useMemo(() => {
@@ -147,6 +163,36 @@ export default function WeekGrid({ entry, now, semester }: Props) {
 
   return (
     <div>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        {availableSems.length > 1 ? (
+          <div className="inline-flex rounded-full border border-zinc-200 bg-white/60 p-0.5 text-[11px] font-medium">
+            {availableSems.map((s) => (
+              <button
+                key={s}
+                onClick={() => setOverride(s)}
+                className={`rounded-full px-2.5 py-0.5 transition-colors ${
+                  viewSem === s
+                    ? "bg-nus-blue text-white"
+                    : "text-zinc-500 hover:text-nus-blue"
+                }`}
+              >
+                Sem {s}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <span className="text-[11px] font-medium text-zinc-500">
+            Semester {viewSem}
+          </span>
+        )}
+        {isCurrentView ? (
+          <span className="rounded-full bg-nus-blue/10 px-2 py-0.5 text-[10px] font-medium text-nus-blue">
+            Week {currentWeek}
+          </span>
+        ) : (
+          <span className="text-[10px] text-zinc-400">Full semester</span>
+        )}
+      </div>
       <div className="overflow-x-auto rounded-lg border border-zinc-200/70 bg-white/40">
         <div style={{ minWidth: DAY_COL + trackWidth }}>
           {/* Hour header */}

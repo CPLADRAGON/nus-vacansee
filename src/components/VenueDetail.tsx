@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { VenueEntry, CalendarEntry } from "@/types";
 import { computeOccupancy, formatTime } from "@/lib/occupancy-engine";
-import { getCurrentWeek } from "@/lib/calendar";
 import { getDestination, mapsUrl } from "@/lib/directions";
 import StatusBadge from "./StatusBadge";
 import WeekGrid from "./WeekGrid";
@@ -46,7 +45,6 @@ export default function VenueDetail({
   const hasCoords =
     typeof entry.lat === "number" && typeof entry.lng === "number";
 
-  const currentWeek = semester ? getCurrentWeek(semester.start) : null;
   const dest = getDestination(venue, entry);
 
   return (
@@ -173,18 +171,9 @@ export default function VenueDetail({
         )}
 
         {/* Weekly timetable */}
-        <div className="mb-1 flex items-center justify-between">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            Weekly Timetable
-          </h3>
-          {semester ? (
-            <span className="rounded-full bg-nus-blue/10 px-2 py-0.5 text-[10px] font-medium text-nus-blue">
-              Week {currentWeek}
-            </span>
-          ) : (
-            <span className="text-[10px] text-amber-600">Between semesters</span>
-          )}
-        </div>
+        <h3 className="mb-1 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          Weekly Timetable
+        </h3>
         <p className="mb-3 text-[11px] text-zinc-400">
           Blue = booked · empty = free. Tap a class for details.
         </p>
