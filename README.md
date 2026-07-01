@@ -100,10 +100,14 @@ Room availability and venue locations come from [NUSMods](https://nusmods.com):
 - **Availability:** `https://api.nusmods.com/v2/{acadYear}/semesters/{sem}/venueInformation.json`
 - **Locations / room names / floors:** `venues.json` from the
   [`nusmodifications/nusmods`](https://github.com/nusmodifications/nusmods) repo
+- **Academic calendar:** the semester / teaching-week / recess-reading-exam logic
+  in `src/lib/calendar.ts` is **ported from NUSMods'
+  [`nusmoderator`](https://github.com/nusmodifications/nusmods/tree/master/packages/nusmoderator)
+  package** (MIT), so week numbering matches NUSMods exactly.
 
 NUSMods provides a public API and asks that it be used responsibly — this app
 fetches at most once per ~12h, caches client-side, and ships a static fallback.
-NUSMods is distributed under the MIT License:
+NUSMods and its `nusmoderator` package are distributed under the MIT License:
 
 ```
 The MIT License (MIT)
