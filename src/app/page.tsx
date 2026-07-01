@@ -16,6 +16,7 @@ import LocationPrompt from "@/components/LocationPrompt";
 import RoomGrid from "@/components/RoomGrid";
 import VenueDetail from "@/components/VenueDetail";
 import FeedbackModal from "@/components/FeedbackModal";
+import AcknowledgementModal from "@/components/AcknowledgementModal";
 
 const MapView = dynamic(() => import("@/components/MapView"), {
   ssr: false,
@@ -46,6 +47,7 @@ export default function Home() {
   const [showAllNear, setShowAllNear] = useState(false);
   const [view, setView] = useState<"list" | "map">("list");
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [ackOpen, setAckOpen] = useState(false);
   const [detailVenue, setDetailVenue] = useState<[string, VenueEntry] | null>(null);
   const autoRequested = useRef(false);
 
@@ -437,10 +439,27 @@ export default function Home() {
         >
           Send feedback
         </button>
+        <span className="px-1 text-zinc-300">·</span>
+        <button
+          onClick={() => setAckOpen(true)}
+          className="text-zinc-400 underline hover:text-nus-blue"
+        >
+          Acknowledgements
+        </button>
+        <p className="pt-1 text-zinc-300">
+          Built by{" "}
+          <button
+            onClick={() => setAckOpen(true)}
+            className="font-medium text-zinc-400 underline hover:text-nus-blue"
+          >
+            WANG BOYU
+          </button>
+        </p>
       </footer>
 
       {/* Feedback modal */}
       {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
+      {ackOpen && <AcknowledgementModal onClose={() => setAckOpen(false)} />}
 
       {/* Venue detail modal */}
       {detailVenue && (

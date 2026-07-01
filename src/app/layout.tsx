@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   title: "NUS Vacansee",
   description:
     "Find your free room nearby — real-time room availability on NUS campus.",
+  authors: [{ name: "WANG BOYU", url: "https://github.com/CPLADRAGON" }],
+  creator: "WANG BOYU",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
