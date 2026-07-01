@@ -4,7 +4,7 @@
   <p><strong>Find your free room nearby.</strong></p>
   <p>Find available rooms on the NUS campus in real time — ranked by how near they are to you.</p>
 
-  <a href="https://nus-vacansee.vercel.app/">🌐 <strong>Live Demo</strong></a>
+  <a href="https://nus-vacansee.vercel.app/"><strong>Live Demo →</strong></a>
 
   <br/><br/>
 
@@ -12,6 +12,10 @@
   ![No backend](https://img.shields.io/badge/architecture-no%20backend-brightgreen)
   ![PWA](https://img.shields.io/badge/install-PWA-blue)
   ![Made for NUS](https://img.shields.io/badge/made%20for-NUS%20students-orange)
+
+  <br/>
+
+  <img src="docs/screenshots/demo.gif" alt="NUS Vacansee demo" width="600" />
 </div>
 
 <br/>
@@ -40,20 +44,16 @@ it is, roughly how many seats, and one-tap directions.
 
 ## Features
 
-- 📍 **Available now, near you** — auto-detects your location and lists currently
-  vacant rooms ranked by distance + how long they stay free.
-- 🟢 **Live status** — vacant / occupied / busy, computed from the local clock,
-  refreshed every 30s.
-- 🗺️ **Map view** — free-room pins on a OneMap basemap with NUS building names;
-  tap a pin for details and directions.
-- 🧭 **Directions** — opens the room's exact location in Google Maps.
-- 🗓️ **Weekly timetable** — a NUSMods-style grid per venue with a "now" line.
-- 🔎 **Filters & search** — faculty cluster, room type (lecture theatre / tutorial
-  / lab / seminar / classroom), free-for ≥ 1h/2h/3h, "All venues", and fuzzy
-  venue search.
-- ⭐ **Favorites & recents** — save go-to rooms for one-tap access.
-- 📱 **Installable PWA** — works offline with a cached snapshot; add to your home
-  screen on iOS/Android.
+| Feature | Description |
+|---|---|
+| **Available now, near you** | Auto-detects your location and lists currently vacant rooms ranked by distance + how long they stay free |
+| **Live status** | Vacant / occupied / busy, computed from the local clock, refreshed every 30 s |
+| **Map view** | Free-room pins on a OneMap basemap with NUS building names; tap a pin for details and directions |
+| **Directions** | Opens the room's exact location in Google Maps |
+| **Weekly timetable** | A NUSMods-style grid per venue with a "now" line |
+| **Filters & search** | Faculty cluster, room type (lecture theatre / tutorial / lab / seminar / classroom), free-for ≥ 1 h/2 h/3 h, and fuzzy venue search |
+| **Favorites & recents** | Save go-to rooms for one-tap access |
+| **Installable PWA** | Works offline with a cached snapshot; add to your home screen on iOS / Android |
 
 ## How it works
 
@@ -182,6 +182,6 @@ Contributions are welcome! Whether it's a bug report, feature request, or pull r
 3. Commit your changes
 4. Push to the branch and open a Pull Request
 
-## ⭐ Star this repo
+## Star this repo
 
 If Vacansee helped you find a study spot, please consider giving it a star — it helps other NUS students discover it!
