@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import type { VenueEntry, TimetableSlot, CalendarEntry } from "@/types";
 import { formatTime } from "@/lib/occupancy-engine";
-import { getCurrentWeek } from "@/lib/calendar";
+import { getCurrentWeek, getPeriodLabel } from "@/lib/calendar";
 import { classLabel, classLabelFull } from "@/lib/lesson";
 
 interface Props {
@@ -90,7 +90,7 @@ function formatWeeks(weeks: number[]): string {
 }
 
 export default function WeekGrid({ entry, now, semester }: Props) {
-  const currentWeek = semester ? getCurrentWeek(semester.start) : null;
+  const currentWeek = getCurrentWeek(now); // instructional week, or 0
   const todayName = DAYS[now.getDay() === 0 ? 6 : now.getDay() - 1];
 
   // Which semesters does this venue actually have classes in?
@@ -186,9 +186,13 @@ export default function WeekGrid({ entry, now, semester }: Props) {
             Semester {viewSem}
           </span>
         )}
-        {isCurrentView ? (
+        {isCurrentView && currentWeek > 0 ? (
           <span className="rounded-full bg-nus-blue/10 px-2 py-0.5 text-[10px] font-medium text-nus-blue">
             Week {currentWeek}
+          </span>
+        ) : isCurrentView ? (
+          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600">
+            {getPeriodLabel(now)}
           </span>
         ) : (
           <span className="text-[10px] text-zinc-400">Full semester</span>

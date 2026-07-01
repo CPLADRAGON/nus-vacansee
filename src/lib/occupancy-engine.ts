@@ -67,7 +67,7 @@ export function computeOccupancy(
   }
 
   const dayName = DAY_NAMES[now.getDay()];
-  const currentWeek = getCurrentWeek(semester.start);
+  const currentWeek = getCurrentWeek(now);
 
   const slots = (venue as unknown as Record<string, TimetableSlot[] | undefined>)[dayName];
 

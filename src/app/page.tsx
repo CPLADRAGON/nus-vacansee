@@ -6,7 +6,7 @@ import type { VenueEntry } from "@/types";
 import { useVenueData } from "@/hooks/useVenueData";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { computeOccupancy, getSingaporeTime } from "@/lib/occupancy-engine";
-import { getCurrentSemester } from "@/lib/calendar";
+import { getCurrentSemester, getCurrentWeek, getPeriodLabel } from "@/lib/calendar";
 import { findNearestCluster, venueDistance } from "@/lib/cluster-map";
 import { clearCache } from "@/lib/venue-cache";
 import type { RoomType } from "@/lib/room-classify";
@@ -30,7 +30,7 @@ const NEAR_ME_LIMIT = 60;
 const MAP_PIN_LIMIT = 200;
 
 export default function Home() {
-  const { data, venues, loading, error, refreshing, lastUpdated, refresh } =
+  const { venues, loading, error, refreshing, lastUpdated, refresh } =
     useVenueData();
   const geo = useGeolocation();
   const { favorites, toggle: toggleFavorite, isFavorite } = useFavorites();
@@ -98,10 +98,9 @@ export default function Home() {
     [geo.lat, geo.lng]
   );
 
-  const semester = useMemo(
-    () => (data?._calendar ? getCurrentSemester(data._calendar) : null),
-    [data]
-  );
+  const semester = useMemo(() => getCurrentSemester(now), [now]);
+  const periodLabel = useMemo(() => getPeriodLabel(now), [now]);
+  const inTeachingWeek = useMemo(() => getCurrentWeek(now) > 0, [now]);
 
   // Occupancy for every venue at the current tick.
   const withOccupancy = useMemo(
@@ -235,11 +234,12 @@ export default function Home() {
         {/* Main UI (loaded) */}
         {!loading && !error && (
           <>
-            {/* Semester gap banner */}
-            {!semester && (
+            {/* Non-teaching-period banner */}
+            {!inTeachingWeek && (
               <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                Currently between semesters — all rooms shown as free. Special
-                term or exam bookings may not be reflected.
+                <span className="font-semibold">{periodLabel}</span> — no classes
+                scheduled, so rooms are shown as free from the timetable. Ad-hoc
+                bookings or exams may not be reflected; please verify on site.
               </div>
             )}
 
