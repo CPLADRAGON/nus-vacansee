@@ -1,10 +1,10 @@
 <div align="center">
   <img src="public/icon.svg" alt="NUS Vacansee" width="96" />
   <h1>NUS Vacansee</h1>
-  <p><strong>Find your free room nearby.</strong></p>
+  <p><em>Find your free room nearby.</em></p>
   <p>Find available rooms on the NUS campus in real time — ranked by how near they are to you.</p>
 
-  <a href="https://nus-vacansee.vercel.app/"><strong>Live Demo →</strong></a>
+  <a href="https://nus-vacansee.vercel.app/"><strong>nus-vacansee.vercel.app →</strong></a>
 
   <br/><br/>
 
@@ -12,15 +12,13 @@
   ![No backend](https://img.shields.io/badge/architecture-no%20backend-brightgreen)
   ![PWA](https://img.shields.io/badge/install-PWA-blue)
   ![Made for NUS](https://img.shields.io/badge/made%20for-NUS%20students-orange)
-
-  <br/>
-
-  <img src="docs/screenshots/demo.gif" alt="NUS Vacansee demo" width="600" />
 </div>
 
 <br/>
 
 <p align="center">
+  <img src="docs/screenshots/demo.gif" alt="NUS Vacansee demo" width="230" />
+  &nbsp;&nbsp;
   <img src="docs/screenshots/list-view.png" alt="List view — free rooms near you" width="230" />
   &nbsp;&nbsp;
   <img src="docs/screenshots/map-view.png" alt="Map view — room pins on campus" width="230" />
