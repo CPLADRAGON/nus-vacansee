@@ -125,7 +125,9 @@ export default function VenueDetail({
         )}
         {occupancy.status !== "vacant" && occupancy.until && (
           <p className="mb-4 text-sm text-zinc-500">
-            {occupancy.currentModule} · ends {formatTime(occupancy.until)}
+            {occupancy.currentModule}
+            {occupancy.currentClass ? ` · ${occupancy.currentClass}` : ""} · ends{" "}
+            {formatTime(occupancy.until)}
           </p>
         )}
 

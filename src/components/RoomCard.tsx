@@ -85,6 +85,9 @@ export default function RoomCard({
         {isOccupied && (
           <p className="text-sm text-zinc-700">
             <span className="font-medium">{occupancy.currentModule}</span>
+            {occupancy.currentClass && (
+              <span className="text-zinc-500"> · {occupancy.currentClass}</span>
+            )}
             {occupancy.until && (
               <span className="text-zinc-400"> · ends {formatTime(occupancy.until)}</span>
             )}

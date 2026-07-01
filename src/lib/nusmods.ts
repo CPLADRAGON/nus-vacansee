@@ -116,6 +116,10 @@ function normalizeSemester(
           semester,
           weeks,
         };
+        const lessonType = (cls.lessonType || "").trim();
+        const classNo = (cls.classNo || "").trim();
+        if (lessonType) slot.lessonType = lessonType;
+        if (classNo) slot.classNo = classNo;
 
         let entry = out[venue];
         if (!entry) {

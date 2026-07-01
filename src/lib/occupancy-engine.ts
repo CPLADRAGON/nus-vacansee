@@ -1,5 +1,6 @@
 import type { VenueEntry, TimetableSlot, OccupancyInfo, CalendarEntry } from "@/types";
 import { getCurrentWeek } from "./calendar";
+import { classLabelFull } from "./lesson";
 
 const DAY_NAMES = [
   "Sunday", "Monday", "Tuesday", "Wednesday",
@@ -104,6 +105,7 @@ export function computeOccupancy(
       return {
         status,
         currentModule: slot.module,
+        currentClass: classLabelFull(slot) || undefined,
         until: slot.end,
       };
     }

@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import type { VenueEntry, TimetableSlot, CalendarEntry } from "@/types";
 import { formatTime } from "@/lib/occupancy-engine";
 import { getCurrentWeek } from "@/lib/calendar";
+import { classLabel, classLabelFull } from "@/lib/lesson";
 
 interface Props {
   entry: VenueEntry;
@@ -267,12 +268,14 @@ export default function WeekGrid({ entry, now, semester }: Props) {
                     const width = pct(toMin(s.end)) - left;
                     const isSel =
                       selected?.day === day && selected?.slot === s;
+                    const cls = classLabelFull(s);
+                    const tall = 100 / lanes >= 50; // room for a 2nd line?
                     return (
                       <button
                         key={`${s.start}-${s.module}-${i}`}
                         onClick={() => setSelected({ day, slot: s })}
-                        title={`${s.module} · ${formatTime(s.start)}–${formatTime(s.end)}`}
-                        aria-label={`${s.module} from ${formatTime(s.start)} to ${formatTime(s.end)} on ${day}`}
+                        title={`${s.module}${cls ? ` (${cls})` : ""} · ${formatTime(s.start)}–${formatTime(s.end)}`}
+                        aria-label={`${s.module} ${cls} from ${formatTime(s.start)} to ${formatTime(s.end)} on ${day}`}
                         className={`absolute overflow-hidden rounded px-1 text-left font-mono text-[10px] leading-tight text-white transition-shadow ${
                           isSel
                             ? "z-10 bg-nus-blue ring-2 ring-nus-orange"
@@ -286,6 +289,11 @@ export default function WeekGrid({ entry, now, semester }: Props) {
                         }}
                       >
                         <span className="block truncate">{s.module}</span>
+                        {tall && classLabel(s) && (
+                          <span className="block truncate text-[8px] text-white/70">
+                            {classLabel(s)}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -310,10 +318,15 @@ export default function WeekGrid({ entry, now, semester }: Props) {
 
       {/* Selected block detail */}
       {selected && (
-        <div className="mt-3 flex items-center gap-2 rounded-lg bg-nus-blue/5 px-3 py-2 text-xs">
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-nus-blue/5 px-3 py-2 text-xs">
           <span className="font-mono font-semibold text-nus-blue">
             {selected.slot.module}
           </span>
+          {classLabelFull(selected.slot) && (
+            <span className="rounded-full bg-nus-blue/10 px-2 py-0.5 text-[10px] font-medium text-nus-blue">
+              {classLabelFull(selected.slot)}
+            </span>
+          )}
           <span className="text-zinc-500">
             {DAY_SHORT[selected.day]} · {formatTime(selected.slot.start)}–
             {formatTime(selected.slot.end)}

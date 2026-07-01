@@ -6,6 +6,8 @@ export interface TimetableSlot {
   module: string;
   semester: number;
   weeks: number[];
+  lessonType?: string;
+  classNo?: string;
 }
 
 export interface VenueDaySchedule {
@@ -33,6 +35,7 @@ export type OccupancyStatus = "vacant" | "occupied" | "crunch";
 export interface OccupancyInfo {
   status: OccupancyStatus;
   currentModule?: string;
+  currentClass?: string;
   until?: string;
   nextClass?: { start: string; module: string };
   // For vacant rooms: when the free block ends and how long it lasts (minutes).
