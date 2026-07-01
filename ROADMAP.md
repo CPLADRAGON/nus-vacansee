@@ -1,6 +1,6 @@
 # NUS Vacansee — Roadmap & Deployment Evaluation
 
-_Last updated: 2026-06-17 · Living document_
+_Last updated: 2026-07-01 · Living document_
 
 This document captures (1) an honest evaluation of whether the current
 deployment can scale to real student usage, and (2) a prioritized roadmap to
@@ -100,17 +100,22 @@ and usable; "Later" items are platform bets.
   "open / card-access only / closed" by time of day and day of week; many NUS
   buildings are locked or card-only after hours. Prevents the worst false
   positives.
-- **Calendar awareness beyond term:** handle **reading/exam weeks, vacation,
-  public holidays, and special terms**. Today "between semesters → all free" is
-  misleading (rooms may be locked or exam-booked). At minimum, show a stronger
-  caveat for these periods.
+- ~~**Calendar awareness beyond term:** handle **reading/exam weeks, vacation,
+  public holidays, and special terms**.~~ **Done (2026-06-30).** Ported NUSMods'
+  `nusmoderator` academic calendar logic; the app now correctly resolves Sem 1,
+  Sem 2, Special Terms (3 & 4), recess, reading, and exam weeks via date-based
+  scheduling. A banner warns users during periods where timetable data is sparse.
 - **Crowd-sourced ground truth.** A one-tap "Is this room actually free?"
   (Free / Occupied / Locked) on the detail page that feeds a short-lived live
   signal shown to others ("2 students reported this occupied 5 min ago"). This
   bridges timetable-vs-reality cheaply (needs a tiny backend or a serverless
   function + KV store).
-- **Trust UI:** always-visible "last updated", a clear "computed from class
-  timetables — verify on site" note, and a confidence indicator.
+- ~~**Trust UI:** always-visible "last updated", a clear "computed from class
+  timetables — verify on site" note, and a confidence indicator.~~ **Partially
+  done (2026-06-30).** Honest timetable states (vacant / class ending soon /
+  free later), "please verify on site" caveat in the Special Term banner, and
+  graceful class labels with lesson type + class number. Remaining: per-venue
+  "last refreshed" timestamp and a formal confidence indicator.
 
 ### 3.2 Next (usability depth)
 - **Capacity / "seats ≥ N" filter** and **accessibility info** (lift access,
@@ -147,10 +152,10 @@ cheapest high-leverage mitigations, in order:
 1. **Honest caveats + last-updated** (done partially) — set expectations.
 2. **Opening hours / access state** — eliminate "locked room" false positives.
 3. **Crowd-sourced confirmations** — cheap real-time correction layer.
-4. **Special-period handling** (exams/vacation) — avoid confidently-wrong states.
+4. ~~**Special-period handling** (exams/vacation) — avoid confidently-wrong states.~~ **Done.**
 5. **Official data** — the eventual source of truth.
 
-Ship 1–4 before heavy marketing; otherwise early users churn after one bad walk.
+Ship 1–3 before heavy marketing; otherwise early users churn after one bad walk.
 
 ---
 
