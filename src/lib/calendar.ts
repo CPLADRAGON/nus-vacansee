@@ -161,22 +161,36 @@ export function buildCalendar(acadYearStart: number): CalendarMap {
   };
 }
 
-// The current regular semester (1 or 2), or null during special terms /
-// vacation between academic years. Non-null throughout a semester's period,
-// including its recess / reading / exam weeks.
+// The current teaching period as a semester number: 1/2 for regular semesters,
+// 3 for Special Term I, 4 for Special Term II. Null only during pure vacation
+// between academic years. Non-null throughout a semester's period (including
+// recess / reading / exam weeks).
 export function getCurrentSemester(now: Date = new Date()): CalendarEntry | null {
   const info = getAcadWeekInfo(now);
   const semester =
-    info.sem === "Semester 1" ? 1 : info.sem === "Semester 2" ? 2 : null;
+    info.sem === "Semester 1"
+      ? 1
+      : info.sem === "Semester 2"
+        ? 2
+        : info.sem === "Special Term I"
+          ? 3
+          : info.sem === "Special Term II"
+            ? 4
+            : null;
   if (!semester) return null;
   const acadStart = 2000 + parseInt(info.year.split("/")[0], 10);
+  const academicYear = `${acadStart}-${acadStart + 1}`;
+  if (semester === 3 || semester === 4) {
+    // Special terms are matched by explicit dates, so the date range is unused.
+    return { semester, start: "", end: "", academicYear };
+  }
   const cal = buildCalendar(acadStart);
-  const range = cal[`${acadStart}-${acadStart + 1}`][String(semester)];
+  const range = cal[academicYear][String(semester)];
   return {
     semester,
     start: range.start,
     end: range.end,
-    academicYear: `${acadStart}-${acadStart + 1}`,
+    academicYear,
   };
 }
 

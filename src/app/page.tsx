@@ -101,6 +101,7 @@ export default function Home() {
   const semester = useMemo(() => getCurrentSemester(now), [now]);
   const periodLabel = useMemo(() => getPeriodLabel(now), [now]);
   const inTeachingWeek = useMemo(() => getCurrentWeek(now) > 0, [now]);
+  const inSpecialTerm = semester?.semester === 3 || semester?.semester === 4;
 
   // Occupancy for every venue at the current tick.
   const withOccupancy = useMemo(
@@ -235,11 +236,19 @@ export default function Home() {
         {!loading && !error && (
           <>
             {/* Non-teaching-period banner */}
-            {!inTeachingWeek && (
+            {!inTeachingWeek && !inSpecialTerm && (
               <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 <span className="font-semibold">{periodLabel}</span> — no classes
                 scheduled, so rooms are shown as free from the timetable. Ad-hoc
                 bookings or exams may not be reflected; please verify on site.
+              </div>
+            )}
+            {/* Special-term banner: classes are scheduled but coverage is limited */}
+            {inSpecialTerm && (
+              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <span className="font-semibold">{periodLabel}</span> — only
+                special-term classes are scheduled, so most rooms are free. Ad-hoc
+                bookings may not be reflected; please verify on site.
               </div>
             )}
 

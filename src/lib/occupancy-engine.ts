@@ -68,6 +68,12 @@ export function computeOccupancy(
 
   const dayName = DAY_NAMES[now.getDay()];
   const currentWeek = getCurrentWeek(now);
+  const todayISO =
+    now.getFullYear() +
+    "-" +
+    String(now.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(now.getDate()).padStart(2, "0");
 
   const slots = (venue as unknown as Record<string, TimetableSlot[] | undefined>)[dayName];
 
@@ -95,9 +101,13 @@ export function computeOccupancy(
     return buildVacant([]);
   }
 
-  const activeSlots = slots.filter(
-    (s) => s.semester === semester.semester && s.weeks.includes(currentWeek)
-  );
+  const activeSlots = slots.filter((s) => {
+    if (s.semester !== semester.semester) return false;
+    // Special-term slots (sem 3/4) match by explicit occurrence date;
+    // regular semesters (1/2) match by teaching week.
+    if (s.dates && s.dates.length > 0) return s.dates.includes(todayISO);
+    return s.weeks.includes(currentWeek);
+  });
 
   for (const slot of activeSlots) {
     if (currentTime >= slot.start && currentTime < slot.end) {

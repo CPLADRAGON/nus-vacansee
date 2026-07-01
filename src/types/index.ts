@@ -6,6 +6,10 @@ export interface TimetableSlot {
   module: string;
   semester: number;
   weeks: number[];
+  // Special-term classes are scheduled by explicit calendar dates (ISO
+  // YYYY-MM-DD) rather than academic teaching-week numbers. When present, the
+  // occupancy engine matches on today's date instead of the teaching week.
+  dates?: string[];
   lessonType?: string;
   classNo?: string;
 }

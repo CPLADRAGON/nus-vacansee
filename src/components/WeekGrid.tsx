@@ -89,6 +89,29 @@ function formatWeeks(weeks: number[]): string {
   return parts.join(", ");
 }
 
+function semLabel(s: number, long = false): string {
+  if (s === 3) return long ? "Special Term I" : "ST I";
+  if (s === 4) return long ? "Special Term II" : "ST II";
+  return long ? `Semester ${s}` : `Sem ${s}`;
+}
+
+function formatDates(dates: string[]): string {
+  if (dates.length === 0) return "";
+  const sorted = [...dates].sort();
+  const fmt = (iso: string) => {
+    const [, m, d] = iso.split("-");
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+    return `${parseInt(d, 10)} ${months[parseInt(m, 10) - 1]}`;
+  };
+  const n = sorted.length;
+  const range =
+    n === 1 ? fmt(sorted[0]) : `${fmt(sorted[0])} – ${fmt(sorted[n - 1])}`;
+  return `${n} session${n > 1 ? "s" : ""} · ${range}`;
+}
+
 export default function WeekGrid({ entry, now, semester }: Props) {
   const currentWeek = getCurrentWeek(now); // instructional week, or 0
   const todayName = DAYS[now.getDay() === 0 ? 6 : now.getDay() - 1];
@@ -107,7 +130,12 @@ export default function WeekGrid({ entry, now, semester }: Props) {
   // one this venue has data for. Reset the user's choice when the venue changes.
   const [override, setOverride] = useState<number | null>(null);
   useEffect(() => setOverride(null), [entry]);
-  const viewSem = override ?? semester?.semester ?? availableSems[0] ?? 1;
+  const viewSem =
+    override ??
+    (semester && availableSems.includes(semester.semester)
+      ? semester.semester
+      : availableSems[0]) ??
+    1;
   const isCurrentView = semester?.semester === viewSem;
 
   // Active slots for the shown semester, packed into lanes. This never mixes
@@ -177,13 +205,13 @@ export default function WeekGrid({ entry, now, semester }: Props) {
                     : "text-zinc-500 hover:text-nus-blue"
                 }`}
               >
-                Sem {s}
+                {semLabel(s)}
               </button>
             ))}
           </div>
         ) : (
           <span className="text-[11px] font-medium text-zinc-500">
-            Semester {viewSem}
+            {semLabel(viewSem, true)}
           </span>
         )}
         {isCurrentView && currentWeek > 0 ? (
@@ -335,11 +363,15 @@ export default function WeekGrid({ entry, now, semester }: Props) {
             {DAY_SHORT[selected.day]} · {formatTime(selected.slot.start)}–
             {formatTime(selected.slot.end)}
           </span>
-          {selected.slot.weeks.length > 0 && (
+          {selected.slot.weeks.length > 0 ? (
             <span className="ml-auto text-zinc-400">
               Weeks {formatWeeks(selected.slot.weeks)}
             </span>
-          )}
+          ) : selected.slot.dates && selected.slot.dates.length > 0 ? (
+            <span className="ml-auto text-zinc-400">
+              {formatDates(selected.slot.dates)}
+            </span>
+          ) : null}
         </div>
       )}
     </div>
