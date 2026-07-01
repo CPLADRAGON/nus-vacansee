@@ -1,7 +1,7 @@
 <div align="center">
   <img src="public/icon.svg" alt="NUS Vacansee" width="96" />
   <h1>NUS Vacansee</h1>
-  <p><em>See what's free, now.</em></p>
+  <p><em>Find your free room nearby.</em></p>
   <p>Find available rooms on the NUS campus in real time — ranked by how near they are to you.</p>
 </div>
 

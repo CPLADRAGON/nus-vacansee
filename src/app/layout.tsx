@@ -11,7 +11,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "NUS Vacansee",
   description:
-    "See what's free, now — find available rooms on NUS campus in real time.",
+    "Find your free room nearby — real-time room availability on NUS campus.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
