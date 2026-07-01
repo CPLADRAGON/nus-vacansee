@@ -1,9 +1,28 @@
 <div align="center">
   <img src="public/icon.svg" alt="NUS Vacansee" width="96" />
   <h1>NUS Vacansee</h1>
-  <p><em>Find your free room nearby.</em></p>
+  <p><strong>Find your free room nearby.</strong></p>
   <p>Find available rooms on the NUS campus in real time — ranked by how near they are to you.</p>
+
+  <a href="https://nus-vacansee.vercel.app/">🌐 <strong>Live Demo</strong></a>
+
+  <br/><br/>
+
+  [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+  ![No backend](https://img.shields.io/badge/architecture-no%20backend-brightgreen)
+  ![PWA](https://img.shields.io/badge/install-PWA-blue)
+  ![Made for NUS](https://img.shields.io/badge/made%20for-NUS%20students-orange)
 </div>
+
+<br/>
+
+<p align="center">
+  <img src="docs/screenshots/list-view.png" alt="List view — free rooms near you" width="230" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/map-view.png" alt="Map view — room pins on campus" width="230" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/timetable-view.png" alt="Timetable — weekly schedule per venue" width="230" />
+</p>
 
 ---
 
@@ -153,3 +172,16 @@ before relying on it.
 ## License
 
 [MIT](LICENSE) © NUS Vacansee contributors.
+
+## Contributing
+
+Contributions are welcome! Whether it's a bug report, feature request, or pull request — we appreciate it.
+
+1. Fork the repo
+2. Create your feature branch (`git checkout -b feature/cool-feature`)
+3. Commit your changes
+4. Push to the branch and open a Pull Request
+
+## ⭐ Star this repo
+
+If Vacansee helped you find a study spot, please consider giving it a star — it helps other NUS students discover it!
