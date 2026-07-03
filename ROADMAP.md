@@ -1,6 +1,6 @@
 # NUS Vacansee — Roadmap & Deployment Evaluation
 
-_Last updated: 2026-07-03 · Living document_
+_Last updated: 2026-07-03 (data pipeline shipped) · Living document_
 
 This document captures (1) an honest evaluation of whether the current
 deployment can scale to real student usage, and (2) a prioritized roadmap to
@@ -15,12 +15,12 @@ dependencies.
 
 ## 0. Rollout readiness verdict (TL;DR)
 
-**Not quite ready for a full campus-wide push yet — two gaps, both fixable:**
+**Getting closer — one gap left to close, one pending a dashboard flip:**
 
 | Area | Status | Verdict |
 |---|---|---|
 | **Hosting/compute** | Static SPA on Vercel, all occupancy math runs client-side | ✅ **Ready.** Scales to hundreds of thousands of visits/month for free. |
-| **Data-fetch path** | Every browser fetches ~4.4MB directly from NUSMods + GitHub raw every ~12h (now 4 semesters incl. special terms) | ⚠️ **Not yet responsible at campus scale** — see §2.4. Top infra priority before heavy marketing. |
+| **Data-fetch path** | **Self-hosted compacted data pipeline shipped (2026-07-03)** — `/api/venues` (edge-cached) + daily Vercel Cron refresh via Vercel Blob, replacing per-user direct NUSMods/GitHub fetches. See §2.4. | ✅ **Code shipped.** Requires a one-time Vercel dashboard setup (Blob store + `CRON_SECRET`) before it's active in production — see §2.4. |
 | **Accuracy/trust** | Availability inferred from class timetables only; no opening-hours/access/ad-hoc-booking awareness | ⚠️ **#1 product risk** — see §4. |
 | **Usage visibility** | **Vercel Web Analytics wired in (2026-07-03)** — `@vercel/analytics` added to root layout | ✅ Ready to observe real volume once enabled (see below). |
 
@@ -31,10 +31,13 @@ deployments will report page views, unique visitors, and top pages with no
 further code changes. It's privacy-friendly (no cookies, no PII, GDPR-safe)
 and has a free tier suitable for a student project.
 
-**Recommended before a full-scale rollout:** ship the self-hosted compacted
-data pipeline (§2.4) first — it's the single change that makes the app fast
-on mobile, keeps us a responsible NUSMods consumer, and removes the
-GitHub-raw rate-limit risk, all at once.
+**To activate the compacted data pipeline in production:** connect a Vercel
+Blob store to the project and set a `CRON_SECRET` env var (see §2.4 for the
+exact steps — both are one-time Vercel dashboard actions that can't be done
+from the repo). Until then, the app still works correctly: `/api/venues`
+gracefully falls back to a live NUSMods fetch on every request when Blob
+credentials are absent, so nothing breaks — it just doesn't get the
+bandwidth/scale benefit until the dashboard setup is done.
 
 ---
 
@@ -84,22 +87,47 @@ Static Next.js SPA on Vercel + browser-side fetch of third-party data
   responsibly" request. `venues.json` via GitHub raw can be throttled outright.
 
 ### 2.4 Recommended infra change (high priority)
-Introduce a **build-time / scheduled data pipeline that we host ourselves**:
 
-1. A scheduled job (Vercel Cron, or a GitHub Action with correct
-   `permissions: contents: write`) runs ~daily:
-   - Fetches both semesters' `venueInformation.json` + `venues.json`.
-   - **Merges + compacts** into one small JSON (strip unused fields; keep
-     day/start/end/weeks/module + cluster + type + capacity + lat/lng/roomName).
-     Expected size: **~300–600 KB** vs ~4.3 MB (≈ 85–90% smaller).
-   - Writes it to `/public` (or Vercel Blob) served from **our** CDN.
-2. The client fetches **our** compacted snapshot (edge-cached, immutable per day)
-   instead of hitting NUSMods/GitHub directly.
+~~Introduce a build-time / scheduled data pipeline that we host ourselves~~
+**Done (2026-07-03).** Design: `docs/superpowers/specs/2026-07-03-data-pipeline-design.md`.
+
+- **Vercel Cron** (`vercel.json`, daily at 18:00 UTC / ~02:00 SGT) triggers a
+  protected route (`/api/cron/refresh-venues`, guarded by a `CRON_SECRET`
+  bearer token) that re-runs the existing `fetchVenueData()` normalization
+  (unchanged — the same isomorphic function that used to run per-user in the
+  browser now runs once/day server-side) and writes the result to **Vercel
+  Blob** at a fixed pathname.
+- The app's own **`/api/venues`** route serves that snapshot with
+  `Cache-Control: public, s-maxage=3600, stale-while-revalidate=86400`, so
+  Vercel's CDN absorbs almost all requests regardless of visitor count.
+- **Cold-start / resilience:** if Blob is empty or unreachable (first deploy,
+  before the first cron tick, or any Blob outage), `/api/venues` transparently
+  falls back to a live `fetchVenueData()` call and best-effort re-warms Blob —
+  it never fails just because the daily job hasn't run yet.
+- **Client waterfall** (`useVenueData.ts`): Tier 0 `/api/venues` (new,
+  preferred) → Tier 1 direct NUSMods+GitHub fetch (existing `fetchVenueData()`,
+  now a resilience fallback only) → Tier 2 bundled `public/venues_timetable.json`
+  (existing, unchanged). The 12h IndexedDB cache layer is untouched.
+- **Deliberately avoided the GitHub Actions approach** — that's the exact
+  mechanism that failed with a 403 permission error early in this project
+  (see the top of this doc's history). Vercel Cron + Blob has no git-commit
+  step, so that class of failure cannot recur.
+
+**⚠️ One-time manual setup required before this is live in production** (can't
+be done from the repo/CLI):
+1. Vercel dashboard → **Storage → Blob → Create/Connect** a Blob store for
+   this project (auto-injects `BLOB_READ_WRITE_TOKEN`).
+2. Vercel dashboard → **Settings → Environment Variables** → add `CRON_SECRET`
+   (any random string).
+3. Redeploy — Vercel registers the cron schedule from `vercel.json` automatically.
+
+Until step 1–2 are done, `/api/venues` still works correctly (cold-start
+fallback path), so nothing breaks — the app just doesn't get the
+bandwidth/scale benefit yet.
 
 **Benefits:** ~10× smaller payload, fast on mobile, removes the GitHub-raw rate
 limit, and reduces NUSMods origin load from "per user" to "once per day for the
-whole app" — far more responsible and far more scalable. Keep a same-day live
-fallback to NUSMods only if our snapshot is missing.
+whole app" — far more responsible and far more scalable.
 
 ### 2.5 Other infra notes
 - **Vercel Hobby is non-commercial.** A free student tool is generally fine; if
@@ -124,11 +152,16 @@ Phased by impact-vs-effort. "Now" items most directly make Vacansee trustworthy
 and usable; "Later" items are platform bets.
 
 ### 3.1 Now (accuracy, trust, scale) — highest priority
-- **Self-hosted compacted data pipeline** (see §2.4) — scale + speed + responsibility.
+- ~~**Self-hosted compacted data pipeline** (see §2.4) — scale + speed + responsibility.~~
+  **Code shipped (2026-07-03)** — see §2.4 for details and the required
+  one-time Vercel dashboard setup (Blob store + `CRON_SECRET`) to activate it
+  in production.
 - **Building opening hours & access awareness.** Mark rooms as
   "open / card-access only / closed" by time of day and day of week; many NUS
   buildings are locked or card-only after hours. Prevents the worst false
-  positives.
+  positives. *(Explicitly deferred to a future pass — no public, structured
+  data source exists for this; it needs either manual curation or
+  crowd-sourcing, see §6.)*
 - ~~**Calendar awareness beyond term:** handle **reading/exam weeks, vacation,
   public holidays, and special terms**.~~ **Done (2026-06-30).** Ported NUSMods'
   `nusmoderator` academic calendar logic; the app now correctly resolves Sem 1,
@@ -190,18 +223,26 @@ Ship 1–3 before heavy marketing; otherwise early users churn after one bad wal
 
 ## 5. Suggested next concrete step
 
-Build the **self-hosted compacted data pipeline (§2.4)**. It is the single change
-that simultaneously: (a) makes the app fast on mobile, (b) makes us a responsible
-NUSMods consumer, (c) removes the GitHub-raw rate-limit risk, and (d) unblocks
-everything else (a stable, small, owned dataset is the foundation for opening
-hours, crowd-sourcing, and offline). It is well-scoped and low-risk.
+~~Build the self-hosted compacted data pipeline (§2.4).~~ **Done (2026-07-03)**
+— code is shipped; activation just needs the one-time Vercel dashboard setup
+described in §2.4 (Blob store connect + `CRON_SECRET`).
+
+**New suggested next step:** with the data pipeline in place, the next
+highest-leverage item is **crowd-sourced ground truth** (§3.1) — a one-tap
+"Is this room actually free?" signal — since it directly targets the #1
+product risk (§4) and can reuse the same Vercel Blob/serverless pattern this
+pipeline just established (no new infra paradigm needed).
 
 ---
 
 ## 6. Open questions / decisions
 
-- Is a small backend acceptable (for crowd-sourced reports + scheduled pipeline),
-  or do we stay strictly static? (A single serverless function + KV is enough.)
+- ~~Is a small backend acceptable (for crowd-sourced reports + scheduled
+  pipeline), or do we stay strictly static?~~ **Decided (2026-07-03):** yes —
+  the data pipeline now uses two small Vercel serverless routes
+  (`/api/venues`, `/api/cron/refresh-venues`). The same pattern (a tiny
+  serverless function + storage) is the natural home for crowd-sourced
+  reports too.
 - Hosting: stay on Vercel Hobby, or move static hosting to Cloudflare/GitHub
   Pages for headroom and clearer ToS?
 - Do we pursue an official NUS data/partnership track, or remain community-run?

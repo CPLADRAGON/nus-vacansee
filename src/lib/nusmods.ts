@@ -309,3 +309,15 @@ export async function fetchVenueData(
   Object.assign(matrix, venues);
   return matrix;
 }
+
+// Fetch the compacted snapshot our own daily cron maintains (see
+// src/app/api/venues/route.ts and src/app/api/cron/refresh-venues/route.ts).
+// This is the preferred data source: small, edge-cached, and doesn't hit
+// NUSMods/GitHub from every visitor's browser. fetchVenueData() above remains
+// as a resilience fallback if this route is ever unavailable.
+export async function fetchCompactedSnapshot(): Promise<VenueMatrix> {
+  const res = await fetch("/api/venues", { cache: "no-store" });
+  if (!res.ok) throw new Error(`/api/venues HTTP ${res.status}`);
+  return (await res.json()) as VenueMatrix;
+}
+

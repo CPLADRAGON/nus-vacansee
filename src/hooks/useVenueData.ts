@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { VenueMatrix, VenueEntry } from "@/types";
-import { fetchVenueData } from "@/lib/nusmods";
+import { fetchVenueData, fetchCompactedSnapshot } from "@/lib/nusmods";
 import { readCache, writeCache, isStale } from "@/lib/venue-cache";
 
 interface VenueDataState {
@@ -39,12 +39,27 @@ export function useVenueData() {
     []
   );
 
-  // Fetch fresh data from NUSMods, persist, and update state.
+  // Fetch fresh data, persist, and update state. Tries our own compacted,
+  // edge-cached snapshot first (Tier 0); falls back to a direct NUSMods+
+  // GitHub fetch (Tier 1, the original behavior) if that's unavailable; and
+  // finally to the bundled offline snapshot (Tier 2) if both fail and there
+  // is no existing cache to fall back on.
   const revalidate = useCallback(
     async (hadCache: boolean) => {
       if (mounted.current) {
         setState((s) => ({ ...s, refreshing: true }));
       }
+
+      // Tier 0: our own compacted, edge-cached snapshot.
+      try {
+        const fresh = await fetchCompactedSnapshot();
+        await writeCache(fresh);
+        applyMatrix(fresh, Date.now(), false);
+        return;
+      } catch {
+        /* fall through to Tier 1 */
+      }
+
       try {
         const fresh = await fetchVenueData();
         await writeCache(fresh);
