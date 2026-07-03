@@ -198,7 +198,7 @@ export default function Home() {
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex flex-col items-end gap-0.5">
             <button
               onClick={() => setFeedbackOpen(true)}
               aria-label="Send feedback"
@@ -215,7 +215,7 @@ export default function Home() {
               </svg>
               <span className="hidden min-[400px]:inline">Feedback</span>
             </button>
-            <span className="font-mono text-xs tabular-nums text-white/70">
+            <span className="font-mono text-xs tabular-nums text-white/60">
               {now.toLocaleTimeString("en-SG", {
                 hour: "2-digit",
                 minute: "2-digit",
