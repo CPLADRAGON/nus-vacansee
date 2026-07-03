@@ -192,7 +192,7 @@ export default function Home() {
               </h1>
               <span
                 title={headerLabelFull}
-                className="whitespace-nowrap font-mono text-[10px] font-medium text-white/60 sm:text-xs"
+                className="whitespace-nowrap font-mono text-xs font-medium tabular-nums text-white/60"
               >
                 {headerLabelFull}
               </span>
@@ -215,7 +215,7 @@ export default function Home() {
               </svg>
               <span className="hidden min-[400px]:inline">Feedback</span>
             </button>
-            <span className="font-mono text-xs tabular-nums text-white/60">
+            <span className="whitespace-nowrap font-mono text-xs font-medium tabular-nums text-white/60">
               {now.toLocaleTimeString("en-SG", {
                 hour: "2-digit",
                 minute: "2-digit",
