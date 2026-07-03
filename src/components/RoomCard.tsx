@@ -117,6 +117,12 @@ export default function RoomCard({
             )}
           </p>
         )}
+
+        {occupancy.status === "vacant" && occupancy.hasScheduleToday === false && (
+          <p className="mt-0.5 text-[11px] text-zinc-400">
+            No classes on record for this room today — please verify on site.
+          </p>
+        )}
       </button>
 
       {onToggleFavorite && (

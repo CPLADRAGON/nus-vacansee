@@ -484,6 +484,7 @@ export default function Home() {
           entry={detailVenue[1]}
           now={now}
           semester={semester}
+          lastUpdated={lastUpdated}
           isFavorite={isFavorite(detailVenue[0])}
           onToggleFavorite={toggleFavorite}
           onClose={() => setDetailVenue(null)}

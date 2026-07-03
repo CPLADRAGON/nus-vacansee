@@ -30,6 +30,20 @@ export function formatDuration(mins: number): string {
   return `${h}h ${m}m`;
 }
 
+// Compact "how long ago" label for a data-freshness timestamp (e.g. "5m ago",
+// "2h ago", "just now"). Used to reassure users the venue data isn't stale.
+export function formatRelativeTime(epochMs: number, now: Date = new Date()): string {
+  const diffMs = now.getTime() - epochMs;
+  if (diffMs < 0) return "just now";
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
 function isCrunchHour(time: string): boolean {
   const t = parseInt(time, 10);
   return t >= 1200 && t <= 1400;
@@ -78,7 +92,8 @@ export function computeOccupancy(
   const slots = (venue as unknown as Record<string, TimetableSlot[] | undefined>)[dayName];
 
   const buildVacant = (
-    activeSlots: TimetableSlot[]
+    activeSlots: TimetableSlot[],
+    hasScheduleToday: boolean
   ): OccupancyInfo => {
     const nextClass = activeSlots
       .filter((s) => s.start > currentTime)
@@ -94,11 +109,15 @@ export function computeOccupancy(
       nextClass: nextClass
         ? { start: nextClass.start, module: nextClass.module }
         : undefined,
+      hasScheduleToday,
     };
   };
 
   if (!slots || slots.length === 0) {
-    return buildVacant([]);
+    // This venue has zero timetable entries for today's weekday at all (in
+    // any semester) — "vacant" here is a default, not confirmed from a real
+    // schedule. Surfaced to the UI as a lower-confidence signal.
+    return buildVacant([], false);
   }
 
   const activeSlots = slots.filter((s) => {
@@ -137,9 +156,10 @@ export function computeOccupancy(
         until: slot.end,
         freeAt: busyEnd < DAY_END ? busyEnd : undefined,
         freeForMinutes: busyEnd < DAY_END ? freeForMinutes : undefined,
+        hasScheduleToday: true,
       };
     }
   }
 
-  return buildVacant(activeSlots);
+  return buildVacant(activeSlots, true);
 }

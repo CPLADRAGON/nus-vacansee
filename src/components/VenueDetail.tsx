@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { VenueEntry, CalendarEntry } from "@/types";
-import { computeOccupancy, formatTime } from "@/lib/occupancy-engine";
+import { computeOccupancy, formatTime, formatRelativeTime } from "@/lib/occupancy-engine";
 import { getDestination, mapsUrl } from "@/lib/directions";
 import StatusBadge from "./StatusBadge";
 import WeekGrid from "./WeekGrid";
@@ -22,6 +22,7 @@ interface Props {
   entry: VenueEntry;
   now: Date;
   semester: CalendarEntry | null;
+  lastUpdated: number | null;
   isFavorite?: boolean;
   onToggleFavorite?: (venue: string) => void;
   onClose: () => void;
@@ -32,6 +33,7 @@ export default function VenueDetail({
   entry,
   now,
   semester,
+  lastUpdated,
   isFavorite,
   onToggleFavorite,
   onClose,
@@ -114,9 +116,19 @@ export default function VenueDetail({
         </div>
 
         {/* Current status */}
-        <div className="mb-2">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
           <StatusBadge info={occupancy} />
+          {lastUpdated && (
+            <span className="text-[11px] text-zinc-400">
+              Data updated {formatRelativeTime(lastUpdated, now)}
+            </span>
+          )}
         </div>
+        {occupancy.status === "vacant" && occupancy.hasScheduleToday === false && (
+          <p className="mb-2 text-[11px] text-zinc-400">
+            No classes on record for this room today — please verify on site.
+          </p>
+        )}
         {occupancy.status === "vacant" && occupancy.nextClass && (
           <p className="mb-4 text-sm text-zinc-500">
             Next class: {occupancy.nextClass.module} at{" "}

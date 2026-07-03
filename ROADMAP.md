@@ -173,11 +173,15 @@ and usable; "Later" items are platform bets.
   bridges timetable-vs-reality cheaply (needs a tiny backend or a serverless
   function + KV store).
 - ~~**Trust UI:** always-visible "last updated", a clear "computed from class
-  timetables — verify on site" note, and a confidence indicator.~~ **Partially
-  done (2026-06-30).** Honest timetable states (vacant / class ending soon /
-  free later), "please verify on site" caveat in the Special Term banner, and
-  graceful class labels with lesson type + class number. Remaining: per-venue
-  "last refreshed" timestamp and a formal confidence indicator.
+  timetables — verify on site" note, and a confidence indicator.~~ **Done
+  (2026-07-04).** Honest timetable states (vacant / class ending soon / free
+  later), "please verify on site" caveat in the Special Term banner, graceful
+  class labels with lesson type + class number, a per-venue "Data updated Xm/h
+  ago" line in the detail view (using the pipeline's freshness timestamp), and
+  a confidence qualifier — "No classes on record for this room today — please
+  verify on site" — shown when a vacant room has zero timetable entries for
+  today at all (distinguishing "confirmed free from a real schedule" from
+  "no data, shown free by default").
 
 ### 3.2 Next (usability depth)
 - **Capacity / "seats ≥ N" filter** and **accessibility info** (lift access,
@@ -211,7 +215,7 @@ Timetable-based availability is necessary but **not sufficient**. The product
 stands or falls on whether a "free" room is actually free and accessible. The
 cheapest high-leverage mitigations, in order:
 
-1. **Honest caveats + last-updated** (done partially) — set expectations.
+1. ~~**Honest caveats + last-updated** (done partially) — set expectations.~~ **Done.**
 2. **Opening hours / access state** — eliminate "locked room" false positives.
 3. **Crowd-sourced confirmations** — cheap real-time correction layer.
 4. ~~**Special-period handling** (exams/vacation) — avoid confidently-wrong states.~~ **Done.**

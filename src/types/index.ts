@@ -50,6 +50,11 @@ export interface OccupancyInfo {
   // when the room stays booked until the end of the campus day.
   freeAt?: string;
   freeForMinutes?: number;
+  // Trust/confidence signal: false when this venue has zero timetable entries
+  // for today's weekday at all (no classes ever scheduled here on this day),
+  // meaning "vacant" is a default rather than confirmed from a real schedule.
+  // Undefined/true means we have real timetable data for today to compute from.
+  hasScheduleToday?: boolean;
 }
 
 export interface VenueMatrix {
