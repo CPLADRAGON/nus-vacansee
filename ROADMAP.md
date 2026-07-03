@@ -1,6 +1,6 @@
 # NUS Vacansee — Roadmap & Deployment Evaluation
 
-_Last updated: 2026-07-01 · Living document_
+_Last updated: 2026-07-03 · Living document_
 
 This document captures (1) an honest evaluation of whether the current
 deployment can scale to real student usage, and (2) a prioritized roadmap to
@@ -13,6 +13,31 @@ dependencies.
 
 ---
 
+## 0. Rollout readiness verdict (TL;DR)
+
+**Not quite ready for a full campus-wide push yet — two gaps, both fixable:**
+
+| Area | Status | Verdict |
+|---|---|---|
+| **Hosting/compute** | Static SPA on Vercel, all occupancy math runs client-side | ✅ **Ready.** Scales to hundreds of thousands of visits/month for free. |
+| **Data-fetch path** | Every browser fetches ~4.4MB directly from NUSMods + GitHub raw every ~12h (now 4 semesters incl. special terms) | ⚠️ **Not yet responsible at campus scale** — see §2.4. Top infra priority before heavy marketing. |
+| **Accuracy/trust** | Availability inferred from class timetables only; no opening-hours/access/ad-hoc-booking awareness | ⚠️ **#1 product risk** — see §4. |
+| **Usage visibility** | **Vercel Web Analytics wired in (2026-07-03)** — `@vercel/analytics` added to root layout | ✅ Ready to observe real volume once enabled (see below). |
+
+**To start seeing volume stats:** open the project in the Vercel dashboard →
+**Analytics** tab → click **Enable**. This can't be toggled from the repo —
+it's a one-time dashboard action per project. Once enabled, subsequent
+deployments will report page views, unique visitors, and top pages with no
+further code changes. It's privacy-friendly (no cookies, no PII, GDPR-safe)
+and has a free tier suitable for a student project.
+
+**Recommended before a full-scale rollout:** ship the self-hosted compacted
+data pipeline (§2.4) first — it's the single change that makes the app fast
+on mobile, keeps us a responsible NUSMods consumer, and removes the
+GitHub-raw rate-limit risk, all at once.
+
+---
+
 ## 1. Where we are today
 
 **What works**
@@ -22,6 +47,7 @@ dependencies.
   room type + approximate capacity, cluster/type/duration/saved filters, search,
   Google Maps directions, an OneMap map view, favorites/recents, installable PWA.
 - Attribution to NUSMods (MIT) and OneMap/SLA; in-app feedback.
+- **Vercel Web Analytics** for aggregate, privacy-friendly usage/volume tracking.
 
 **Core limitation (the thing that decides adoption):** availability is inferred
 from **class timetables only**. It does **not** know about ad-hoc bookings, CCA
@@ -84,8 +110,11 @@ fallback to NUSMods only if our snapshot is missing.
 - We removed the service worker (it caused stale-code issues). If we re-add
   offline support later, ship a **versioned, network-first** worker with a tested
   update path (we already learned this the hard way).
-- Add lightweight, privacy-respecting analytics (e.g., Plausible/Umami) to
-  understand real usage and guide the roadmap.
+- ~~Add lightweight, privacy-respecting analytics (e.g., Plausible/Umami) to
+  understand real usage and guide the roadmap.~~ **Done (2026-07-03).** Wired
+  up **Vercel Web Analytics** (`@vercel/analytics` in the root layout) — no
+  cookies/PII, free tier. Requires a one-time **Enable** click in the Vercel
+  dashboard's Analytics tab per project to start collecting data.
 
 ---
 

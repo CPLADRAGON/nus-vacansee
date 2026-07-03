@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
@@ -45,6 +46,7 @@ export default function RootLayout({
       <body className="min-h-full">
         {children}
         <ServiceWorkerRegister />
+        <Analytics />
       </body>
     </html>
   );
