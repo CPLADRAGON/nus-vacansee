@@ -441,7 +441,7 @@ export default function WeekGrid({ entry, now, semester }: Props) {
           viewport so it's visible immediately on tap without scrolling,
           matching the mobile experience where shorter content already fits. */}
       {selected && (
-        <div className="sticky bottom-0 z-40 -mx-5 -mb-5 mt-3 border-t border-zinc-200 bg-white/95 px-5 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur">
+        <div className="sticky bottom-0 z-40 -mx-5 -mb-5 border-t border-zinc-200 bg-white/95 px-5 pb-3 pt-4 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur">
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="font-mono font-semibold text-nus-blue">
               {selected.slot.module}
