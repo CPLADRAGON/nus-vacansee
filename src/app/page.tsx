@@ -110,7 +110,6 @@ export default function Home() {
   const semester = useMemo(() => getCurrentSemester(now), [now]);
   const periodLabel = useMemo(() => getPeriodLabel(now), [now]);
   const headerLabelFull = useMemo(() => getHeaderPeriodLabel(now, false), [now]);
-  const headerLabelShort = useMemo(() => getHeaderPeriodLabel(now, true), [now]);
   const inTeachingWeek = useMemo(() => getCurrentWeek(now) > 0, [now]);
   const inSpecialTerm = semester?.semester === 3 || semester?.semester === 4;
 
@@ -195,8 +194,7 @@ export default function Home() {
                 title={headerLabelFull}
                 className="whitespace-nowrap font-mono text-[10px] font-medium text-white/60 sm:text-xs"
               >
-                <span className="hidden sm:inline">{headerLabelFull}</span>
-                <span className="sm:hidden">{headerLabelShort}</span>
+                {headerLabelFull}
               </span>
             </div>
           </div>
