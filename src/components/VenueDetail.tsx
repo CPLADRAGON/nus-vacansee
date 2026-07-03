@@ -1,10 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { VenueEntry, CalendarEntry } from "@/types";
 import { computeOccupancy, formatTime, formatRelativeTime } from "@/lib/occupancy-engine";
 import { getDestination, mapsUrl } from "@/lib/directions";
+import {
+  fetchReports,
+  submitReport,
+  isOnCooldown,
+  summarizeReports,
+  type Report,
+  type ReportStatus,
+} from "@/lib/reports";
 import StatusBadge from "./StatusBadge";
 import WeekGrid from "./WeekGrid";
 
@@ -16,6 +24,12 @@ const VenueMiniMap = dynamic(() => import("./VenueMiniMap"), {
     </div>
   ),
 });
+
+const REPORT_LABEL: Record<ReportStatus, string> = {
+  free: "Free",
+  occupied: "Occupied",
+  locked: "Locked",
+};
 
 interface Props {
   venue: string;
@@ -43,6 +57,35 @@ export default function VenueDetail({
     [entry, now, semester]
   );
   const [showMap, setShowMap] = useState(false);
+  const [reports, setReports] = useState<Report[] | null>(null);
+  const [submitting, setSubmitting] = useState<ReportStatus | null>(null);
+  const [justSubmitted, setJustSubmitted] = useState(false);
+  const [onCooldown, setOnCooldown] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setReports(null);
+    setJustSubmitted(false);
+    setOnCooldown(isOnCooldown(venue));
+    fetchReports().then((map) => {
+      if (!cancelled) setReports(map[venue] ?? []);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [venue]);
+
+  const reportSummary = useMemo(() => summarizeReports(reports ?? undefined), [reports]);
+
+  const handleReport = async (status: ReportStatus) => {
+    setSubmitting(status);
+    const ok = await submitReport(venue, status);
+    setSubmitting(null);
+    if (ok) {
+      setJustSubmitted(true);
+      setOnCooldown(true);
+    }
+  };
 
   const hasCoords =
     typeof entry.lat === "number" && typeof entry.lng === "number";
@@ -148,6 +191,43 @@ export default function VenueDetail({
             )}
           </p>
         )}
+
+        {/* Crowd-sourced ground truth */}
+        <div className="mb-4 rounded-lg border border-zinc-200/70 bg-white/50 p-3">
+          {reportSummary && (
+            <p className="mb-2 text-xs text-zinc-500">
+              {reportSummary.count} student{reportSummary.count > 1 ? "s" : ""}{" "}
+              reported this{" "}
+              <span className="font-medium text-zinc-700">
+                {REPORT_LABEL[reportSummary.status]}
+              </span>{" "}
+              {formatRelativeTime(reportSummary.latestTs, now)}
+            </p>
+          )}
+          {justSubmitted ? (
+            <p className="text-xs font-medium text-emerald-600">
+              Thanks for confirming! This helps other students.
+            </p>
+          ) : (
+            <>
+              <p className="mb-2 text-xs font-medium text-zinc-600">
+                Is this room actually free?
+              </p>
+              <div className="flex gap-2">
+                {(["free", "occupied", "locked"] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => handleReport(s)}
+                    disabled={submitting !== null || onCooldown}
+                    className="flex-1 rounded-lg border border-zinc-200 bg-white/70 px-2 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:border-nus-blue hover:text-nus-blue disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {submitting === s ? "…" : REPORT_LABEL[s]}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
 
         {/* Directions */}
         <div className="mb-3 flex flex-wrap items-center gap-2">

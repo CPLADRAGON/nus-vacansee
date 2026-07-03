@@ -1,0 +1,103 @@
+import { NextResponse } from "next/server";
+import { head, put } from "@vercel/blob";
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 30;
+
+const BLOB_PATHNAME = "reports/latest.json";
+const MAX_AGE_MS = 30 * 60 * 1000; // reports are relevant for 30 minutes
+const MAX_REPORTS_PER_VENUE = 5;
+
+type ReportStatus = "free" | "occupied" | "locked";
+interface Report {
+  status: ReportStatus;
+  ts: number;
+}
+type ReportsMap = Record<string, Report[]>;
+
+// Crowd-sourced "is this room actually free?" signal — bridges the gap
+// between timetable-inferred availability and reality (locked rooms, ad-hoc
+// bookings, etc). Reuses the same Vercel Blob store the data pipeline uses
+// (see docs/superpowers/specs/2026-07-04-crowd-reports-design.md) rather than
+// requiring a second external service.
+async function readReports(): Promise<ReportsMap> {
+  try {
+    const meta = await head(BLOB_PATHNAME);
+    const res = await fetch(meta.url, { cache: "no-store" });
+    if (!res.ok) return {};
+    return (await res.json()) as ReportsMap;
+  } catch {
+    // Blob missing/unreadable (e.g. no reports submitted yet, or Blob not
+    // connected) — treat as "no reports" rather than failing the request.
+    return {};
+  }
+}
+
+function pruneReports(map: ReportsMap, now: number): ReportsMap {
+  const out: ReportsMap = {};
+  for (const [venue, reports] of Object.entries(map)) {
+    const fresh = reports.filter((r) => now - r.ts < MAX_AGE_MS);
+    if (fresh.length > 0) out[venue] = fresh.slice(-MAX_REPORTS_PER_VENUE);
+  }
+  return out;
+}
+
+async function writeReports(map: ReportsMap): Promise<void> {
+  await put(BLOB_PATHNAME, JSON.stringify(map), {
+    access: "public",
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    contentType: "application/json",
+    cacheControlMaxAge: 60,
+  });
+}
+
+export async function GET() {
+  const map = pruneReports(await readReports(), Date.now());
+  return NextResponse.json(map, {
+    headers: {
+      // Short TTL: this is a live community signal, not the daily venue snapshot.
+      "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+    },
+  });
+}
+
+export async function POST(request: Request) {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const venue = (body as { venue?: unknown } | null)?.venue;
+  const status = (body as { status?: unknown } | null)?.status;
+  if (
+    typeof venue !== "string" ||
+    venue.length === 0 ||
+    venue.length > 64 ||
+    (status !== "free" && status !== "occupied" && status !== "locked")
+  ) {
+    return NextResponse.json(
+      { error: "Body must be { venue: string, status: 'free'|'occupied'|'locked' }" },
+      { status: 400 }
+    );
+  }
+
+  const now = Date.now();
+  const map = pruneReports(await readReports(), now);
+  const list = map[venue] ?? [];
+  list.push({ status, ts: now });
+  map[venue] = list.slice(-MAX_REPORTS_PER_VENUE);
+
+  try {
+    await writeReports(map);
+  } catch (err) {
+    return NextResponse.json(
+      { ok: false, error: (err as Error).message },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ ok: true, venue, reports: map[venue] });
+}

@@ -1,6 +1,6 @@
 # NUS Vacansee — Roadmap & Deployment Evaluation
 
-_Last updated: 2026-07-03 (data pipeline shipped) · Living document_
+_Last updated: 2026-07-04 (crowd-sourced reports shipped) · Living document_
 
 This document captures (1) an honest evaluation of whether the current
 deployment can scale to real student usage, and (2) a prioritized roadmap to
@@ -15,13 +15,13 @@ dependencies.
 
 ## 0. Rollout readiness verdict (TL;DR)
 
-**Getting closer — one gap left to close, one pending a dashboard flip:**
+**Getting closer — one product gap left (partially mitigated), one pending a dashboard flip:**
 
 | Area | Status | Verdict |
 |---|---|---|
 | **Hosting/compute** | Static SPA on Vercel, all occupancy math runs client-side | ✅ **Ready.** Scales to hundreds of thousands of visits/month for free. |
 | **Data-fetch path** | **Self-hosted compacted data pipeline shipped (2026-07-03)** — `/api/venues` (edge-cached) + daily Vercel Cron refresh via Vercel Blob, replacing per-user direct NUSMods/GitHub fetches. See §2.4. | ✅ **Code shipped.** Requires a one-time Vercel dashboard setup (Blob store + `CRON_SECRET`) before it's active in production — see §2.4. |
-| **Accuracy/trust** | Availability inferred from class timetables only; no opening-hours/access/ad-hoc-booking awareness | ⚠️ **#1 product risk** — see §4. |
+| **Accuracy/trust** | Availability inferred from class timetables, now supplemented by crowd-sourced reports (2026-07-04) and honest "no data"/last-updated signals (2026-07-04); opening-hours/access awareness still missing | ⚠️ **Improved, but opening-hours/access is still the #1 remaining gap** — see §4. |
 | **Usage visibility** | **Vercel Web Analytics wired in (2026-07-03)** — `@vercel/analytics` added to root layout | ✅ Ready to observe real volume once enabled (see below). |
 
 **To start seeing volume stats:** open the project in the Vercel dashboard →
@@ -167,11 +167,19 @@ and usable; "Later" items are platform bets.
   `nusmoderator` academic calendar logic; the app now correctly resolves Sem 1,
   Sem 2, Special Terms (3 & 4), recess, reading, and exam weeks via date-based
   scheduling. A banner warns users during periods where timetable data is sparse.
-- **Crowd-sourced ground truth.** A one-tap "Is this room actually free?"
+- ~~**Crowd-sourced ground truth.** A one-tap "Is this room actually free?"
   (Free / Occupied / Locked) on the detail page that feeds a short-lived live
   signal shown to others ("2 students reported this occupied 5 min ago"). This
   bridges timetable-vs-reality cheaply (needs a tiny backend or a serverless
-  function + KV store).
+  function + KV store).~~ **Done (2026-07-04).** Design:
+  `docs/superpowers/specs/2026-07-04-crowd-reports-design.md`. `/api/reports`
+  (serverless, reuses the same Blob store as the data pipeline — Vercel KV is
+  deprecated/migrated to a paid Marketplace Redis integration, so this avoids
+  a second manual external dependency) stores the last 5 reports per venue,
+  pruned after 30 minutes. `VenueDetail` shows a compact Free/Occupied/Locked
+  report row plus a "N students reported X Y ago" summary when reports exist,
+  with a client-side 2-minute per-venue cooldown to deter accidental repeat
+  taps.
 - ~~**Trust UI:** always-visible "last updated", a clear "computed from class
   timetables — verify on site" note, and a confidence indicator.~~ **Done
   (2026-07-04).** Honest timetable states (vacant / class ending soon / free
@@ -217,11 +225,15 @@ cheapest high-leverage mitigations, in order:
 
 1. ~~**Honest caveats + last-updated** (done partially) — set expectations.~~ **Done.**
 2. **Opening hours / access state** — eliminate "locked room" false positives.
-3. **Crowd-sourced confirmations** — cheap real-time correction layer.
+   *(Explicitly deferred — no public data source; needs manual curation or
+   crowd-sourcing, see §6.)*
+3. ~~**Crowd-sourced confirmations** — cheap real-time correction layer.~~ **Done (2026-07-04).**
 4. ~~**Special-period handling** (exams/vacation) — avoid confidently-wrong states.~~ **Done.**
 5. **Official data** — the eventual source of truth.
 
 Ship 1–3 before heavy marketing; otherwise early users churn after one bad walk.
+**1, 3, and 4 are done; 2 (opening hours) remains the biggest open gap for
+avoiding locked-room false positives specifically.**
 
 ---
 
@@ -231,11 +243,16 @@ Ship 1–3 before heavy marketing; otherwise early users churn after one bad wal
 — code is shipped; activation just needs the one-time Vercel dashboard setup
 described in §2.4 (Blob store connect + `CRON_SECRET`).
 
-**New suggested next step:** with the data pipeline in place, the next
-highest-leverage item is **crowd-sourced ground truth** (§3.1) — a one-tap
-"Is this room actually free?" signal — since it directly targets the #1
-product risk (§4) and can reuse the same Vercel Blob/serverless pattern this
-pipeline just established (no new infra paradigm needed).
+~~Crowd-sourced ground truth (§3.1).~~ **Done (2026-07-04)** — `/api/reports`
+shipped, reusing the same Blob store; no additional manual setup needed
+beyond what §2.4 already requires.
+
+**New suggested next step:** with both the data pipeline and crowd-sourced
+reports in place, the remaining "Now" gap is **building opening hours &
+access awareness** (§3.1) — deliberately deferred earlier since it needs
+either manual per-cluster research or waiting for real crowd-report volume to
+emerge organically (a room repeatedly reported "locked" is itself a signal
+about its access hours, for free, from the feature just shipped).
 
 ---
 
