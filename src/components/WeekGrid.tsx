@@ -288,6 +288,19 @@ export default function WeekGrid({ entry, now, semester }: Props) {
               style={{ width: DAY_COL }}
             />
             <div className="relative h-6" style={{ width: trackWidth }}>
+              {hours.slice(0, -1).map(
+                (h, i) =>
+                  i % 2 === 1 && (
+                    <span
+                      key={`band-${h}`}
+                      className="absolute inset-y-0 bg-zinc-500/[0.05]"
+                      style={{
+                        left: `${(i / (hours.length - 1)) * 100}%`,
+                        width: `${(1 / (hours.length - 1)) * 100}%`,
+                      }}
+                    />
+                  )
+              )}
               {hours.map((h, i) => (
                 <span
                   key={h}
@@ -323,6 +336,22 @@ export default function WeekGrid({ entry, now, semester }: Props) {
                 </div>
 
                 <div className="relative" style={{ width: trackWidth, height: rowH }}>
+                  {/* Alternating hour-column shading (Google-Calendar style) instead
+                      of hard vertical rules — gives hour orientation without harsh lines. */}
+                  {hours.slice(0, -1).map(
+                    (h, i) =>
+                      i % 2 === 1 && (
+                        <span
+                          key={h}
+                          className="absolute inset-y-0 bg-zinc-500/[0.05]"
+                          style={{
+                            left: `${(i / (hours.length - 1)) * 100}%`,
+                            width: `${(1 / (hours.length - 1)) * 100}%`,
+                          }}
+                        />
+                      )
+                  )}
+
                   {/* Dim past hours on today */}
                   {isToday && showNow && (
                     <span
@@ -330,15 +359,6 @@ export default function WeekGrid({ entry, now, semester }: Props) {
                       style={{ width: `${pct(nowMin)}%` }}
                     />
                   )}
-
-                  {/* Hour gridlines */}
-                  {hours.slice(1, -1).map((h, i) => (
-                    <span
-                      key={h}
-                      className="absolute inset-y-0 w-px bg-zinc-200 sm:bg-zinc-300"
-                      style={{ left: `${((i + 1) / (hours.length - 1)) * 100}%` }}
-                    />
-                  ))}
 
                   {/* Free-all-day label */}
                   {!layout && (
@@ -417,30 +437,43 @@ export default function WeekGrid({ entry, now, semester }: Props) {
         </div>
       </div>
 
-      {/* Selected block detail */}
+      {/* Selected block detail — sticky to the bottom of the modal's scroll
+          viewport so it's visible immediately on tap without scrolling,
+          matching the mobile experience where shorter content already fits. */}
       {selected && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-nus-blue/5 px-3 py-2 text-xs">
-          <span className="font-mono font-semibold text-nus-blue">
-            {selected.slot.module}
-          </span>
-          {classLabelFull(selected.slot) && (
-            <span className="rounded-full bg-nus-blue/10 px-2 py-0.5 text-[10px] font-medium text-nus-blue">
-              {classLabelFull(selected.slot)}
+        <div className="sticky bottom-0 z-40 -mx-5 -mb-5 mt-3 border-t border-zinc-200 bg-white/95 px-5 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="font-mono font-semibold text-nus-blue">
+              {selected.slot.module}
             </span>
-          )}
-          <span className="text-zinc-500">
-            {DAY_SHORT[selected.day]} · {formatTime(selected.slot.start)}–
-            {formatTime(selected.slot.end)}
-          </span>
-          {selected.slot.weeks.length > 0 ? (
-            <span className="ml-auto text-zinc-400">
-              Weeks {formatWeeks(selected.slot.weeks)}
+            {classLabelFull(selected.slot) && (
+              <span className="rounded-full bg-nus-blue/10 px-2 py-0.5 text-[10px] font-medium text-nus-blue">
+                {classLabelFull(selected.slot)}
+              </span>
+            )}
+            <span className="text-zinc-500">
+              {DAY_SHORT[selected.day]} · {formatTime(selected.slot.start)}–
+              {formatTime(selected.slot.end)}
             </span>
-          ) : selected.slot.dates && selected.slot.dates.length > 0 ? (
-            <span className="ml-auto text-zinc-400">
-              {formatDates(selected.slot.dates)}
-            </span>
-          ) : null}
+            {selected.slot.weeks.length > 0 ? (
+              <span className="ml-auto text-zinc-400">
+                Weeks {formatWeeks(selected.slot.weeks)}
+              </span>
+            ) : selected.slot.dates && selected.slot.dates.length > 0 ? (
+              <span className="ml-auto text-zinc-400">
+                {formatDates(selected.slot.dates)}
+              </span>
+            ) : null}
+            <button
+              onClick={() => setSelected(null)}
+              aria-label="Close class details"
+              className="rounded-full p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
+            >
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
         </div>
       )}
     </div>

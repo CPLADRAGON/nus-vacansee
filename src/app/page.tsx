@@ -184,26 +184,23 @@ export default function Home() {
     <>
       {/* Brand banner */}
       <header className="sticky top-0 z-40 border-b border-nus-orange/40 bg-nus-blue shadow-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-2.5">
           <div className="flex items-center gap-2">
-            <span className="inline-block h-5 w-1.5 rounded-full bg-nus-orange" />
-            <h1 className="text-lg font-bold tracking-tight text-white">
-              NUS <span className="text-nus-orange">Vacansee</span>
-            </h1>
+            <span className="inline-block h-8 w-1.5 shrink-0 rounded-full bg-nus-orange" />
+            <div className="flex flex-col leading-tight">
+              <h1 className="text-lg font-bold tracking-tight text-white">
+                NUS <span className="text-nus-orange">Vacansee</span>
+              </h1>
+              <span
+                title={headerLabelFull}
+                className="whitespace-nowrap font-mono text-[10px] font-medium text-white/60 sm:text-xs"
+              >
+                <span className="hidden sm:inline">{headerLabelFull}</span>
+                <span className="sm:hidden">{headerLabelShort}</span>
+              </span>
+            </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <span
-              title={headerLabelFull}
-              className="hidden whitespace-nowrap rounded-full border border-white/20 bg-white/10 px-2.5 py-1 font-mono text-xs font-medium text-white/80 sm:inline-block"
-            >
-              {headerLabelFull}
-            </span>
-            <span
-              title={headerLabelFull}
-              className="whitespace-nowrap rounded-full border border-white/20 bg-white/10 px-1.5 py-1 font-mono text-[9px] font-medium text-white/80 sm:hidden"
-            >
-              {headerLabelShort}
-            </span>
             <button
               onClick={() => setFeedbackOpen(true)}
               aria-label="Send feedback"
