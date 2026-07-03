@@ -6,7 +6,7 @@ import type { VenueEntry } from "@/types";
 import { useVenueData } from "@/hooks/useVenueData";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { computeOccupancy, getSingaporeTime } from "@/lib/occupancy-engine";
-import { getCurrentSemester, getCurrentWeek, getPeriodLabel } from "@/lib/calendar";
+import { getCurrentSemester, getCurrentWeek, getPeriodLabel, getHeaderPeriodLabel } from "@/lib/calendar";
 import { findNearestCluster, venueDistance } from "@/lib/cluster-map";
 import { clearCache } from "@/lib/venue-cache";
 import type { RoomType } from "@/lib/room-classify";
@@ -90,6 +90,13 @@ export default function Home() {
 
   const handleAutoDetect = useCallback(() => {
     geo.requestLocation();
+    // Switch into the near-me view regardless of current browsing state, so
+    // the button always shows nearby rooms once location resolves (matching
+    // the "Near me" pill's behavior). Room-type/duration filters are kept.
+    setCluster(null);
+    setSearch("");
+    setShowAll(false);
+    setSavedOnly(false);
   }, [geo]);
 
   const detectedCluster = useMemo(
@@ -102,6 +109,8 @@ export default function Home() {
 
   const semester = useMemo(() => getCurrentSemester(now), [now]);
   const periodLabel = useMemo(() => getPeriodLabel(now), [now]);
+  const headerLabelFull = useMemo(() => getHeaderPeriodLabel(now, false), [now]);
+  const headerLabelShort = useMemo(() => getHeaderPeriodLabel(now, true), [now]);
   const inTeachingWeek = useMemo(() => getCurrentWeek(now) > 0, [now]);
   const inSpecialTerm = semester?.semester === 3 || semester?.semester === 4;
 
@@ -182,11 +191,23 @@ export default function Home() {
               NUS <span className="text-nus-orange">Vacansee</span>
             </h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span
+              title={headerLabelFull}
+              className="hidden whitespace-nowrap rounded-full border border-white/20 bg-white/10 px-2.5 py-1 font-mono text-xs font-medium text-white/80 sm:inline-block"
+            >
+              {headerLabelFull}
+            </span>
+            <span
+              title={headerLabelFull}
+              className="whitespace-nowrap rounded-full border border-white/20 bg-white/10 px-1.5 py-1 font-mono text-[9px] font-medium text-white/80 sm:hidden"
+            >
+              {headerLabelShort}
+            </span>
             <button
               onClick={() => setFeedbackOpen(true)}
               aria-label="Send feedback"
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-white/20"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-white/20 sm:px-2.5"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path
@@ -197,7 +218,7 @@ export default function Home() {
                   strokeLinejoin="round"
                 />
               </svg>
-              <span>Feedback</span>
+              <span className="hidden min-[400px]:inline">Feedback</span>
             </button>
             <span className="font-mono text-xs tabular-nums text-white/70">
               {now.toLocaleTimeString("en-SG", {

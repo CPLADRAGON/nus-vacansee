@@ -53,7 +53,7 @@ export default function VenueDetail({
       onClick={onClose}
     >
       <div
-        className="glass w-full max-w-lg rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-y-auto p-5"
+        className="glass w-full max-w-lg rounded-t-2xl sm:max-w-2xl sm:rounded-2xl lg:max-w-4xl max-h-[85vh] overflow-y-auto p-5"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

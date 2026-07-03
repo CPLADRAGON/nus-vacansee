@@ -5,6 +5,7 @@ import type { VenueEntry, TimetableSlot, CalendarEntry } from "@/types";
 import { formatTime } from "@/lib/occupancy-engine";
 import { getCurrentWeek, getPeriodLabel } from "@/lib/calendar";
 import { classLabel, classLabelFull } from "@/lib/lesson";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 interface Props {
   entry: VenueEntry;
@@ -23,9 +24,13 @@ const DAY_SHORT: Record<string, string> = {
   Sunday: "Sun",
 };
 
-const HOUR_W = 52; // px per hour in the scrollable time track
+// Hour-column width & lane height per breakpoint. Wider on desktop so labels
+// have real room and gridlines are proportionally easier to read.
+const HOUR_W_MOBILE = 52;
+const HOUR_W_DESKTOP = 84;
 const DAY_COL = 44; // px width of the sticky day-label column
-const LANE_H = 26; // px per stacked lane within a day row
+const LANE_H_MOBILE = 26;
+const LANE_H_DESKTOP = 34;
 
 interface LaneItem {
   slot: TimetableSlot;
@@ -113,6 +118,9 @@ function formatDates(dates: string[]): string {
 }
 
 export default function WeekGrid({ entry, now, semester }: Props) {
+  const isDesktop = useMediaQuery("(min-width: 640px)");
+  const HOUR_W = isDesktop ? HOUR_W_DESKTOP : HOUR_W_MOBILE;
+  const LANE_H = isDesktop ? LANE_H_DESKTOP : LANE_H_MOBILE;
   const currentWeek = getCurrentWeek(now); // instructional week, or 0
   const todayName = DAYS[now.getDay() === 0 ? 6 : now.getDay() - 1];
 
@@ -283,7 +291,7 @@ export default function WeekGrid({ entry, now, semester }: Props) {
               {hours.map((h, i) => (
                 <span
                   key={h}
-                  className="absolute top-1 -translate-x-1/2 font-mono text-[10px] text-zinc-400"
+                  className="absolute top-1 -translate-x-1/2 font-mono text-[10px] text-zinc-400 sm:text-xs"
                   style={{ left: `${(i / (hours.length - 1)) * 100}%` }}
                 >
                   {String(h / 60).padStart(2, "0")}
@@ -327,7 +335,7 @@ export default function WeekGrid({ entry, now, semester }: Props) {
                   {hours.slice(1, -1).map((h, i) => (
                     <span
                       key={h}
-                      className="absolute inset-y-0 w-px bg-zinc-100"
+                      className="absolute inset-y-0 w-px bg-zinc-200 sm:bg-zinc-300"
                       style={{ left: `${((i + 1) / (hours.length - 1)) * 100}%` }}
                     />
                   ))}
@@ -362,7 +370,7 @@ export default function WeekGrid({ entry, now, semester }: Props) {
                         onClick={() => setSelected({ day, slot: s })}
                         title={`${s.module}${cls ? ` (${cls})` : ""} · ${formatTime(s.start)}–${formatTime(s.end)}${state === "reference" ? " · not on this week" : state === "live" ? " · on now" : ""}`}
                         aria-label={`${s.module} ${cls} from ${formatTime(s.start)} to ${formatTime(s.end)} on ${day}${state === "live" ? ", on now" : state === "reference" ? ", not on this week" : ""}`}
-                        className={`absolute overflow-hidden rounded px-1 text-left font-mono text-[10px] leading-tight transition-shadow ${base} ${selRing}`}
+                        className={`absolute overflow-hidden rounded px-1 text-left font-mono text-[10px] leading-tight transition-shadow sm:text-xs ${base} ${selRing}`}
                         style={{
                           left: `${left}%`,
                           width: `calc(${width}% - 2px)`,
@@ -374,7 +382,7 @@ export default function WeekGrid({ entry, now, semester }: Props) {
                           <>
                             <span className="block truncate">{s.module}</span>
                             {classLabel(s) && (
-                              <span className={`block truncate text-[8px] ${labelColor}`}>
+                              <span className={`block truncate text-[8px] sm:text-[10px] ${labelColor}`}>
                                 {classLabel(s)}
                               </span>
                             )}

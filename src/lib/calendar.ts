@@ -233,3 +233,61 @@ export function getPeriodLabel(now: Date = new Date()): string {
       return "Vacation";
   }
 }
+
+// NUSMods-style persistent header summary, e.g. "AY2025/26 · Special Term II
+// · Week 2", "AY2025/26 · Semester 1 · Recess week", or "AY2025/26 · Vacation".
+// `short` produces a compact variant for narrow headers that drops the AY
+// prefix entirely, e.g. "ST II · Wk 2".
+export function getHeaderPeriodLabel(
+  now: Date = new Date(),
+  short = false
+): string {
+  const info = getAcadWeekInfo(now);
+  const [yy1, yy2] = info.year.split("/");
+  const ay = `AY20${yy1}/${yy2}`;
+
+  const semPart = (() => {
+    if (!short) return info.sem ?? "Vacation";
+    switch (info.sem) {
+      case "Semester 1":
+        return "Sem 1";
+      case "Semester 2":
+        return "Sem 2";
+      case "Special Term I":
+        return "ST I";
+      case "Special Term II":
+        return "ST II";
+      default:
+        return "Vacation";
+    }
+  })();
+
+  const periodPart = (() => {
+    if (info.sem === "Special Term I" || info.sem === "Special Term II") {
+      return info.num != null ? `${short ? "Wk" : "Week"} ${info.num}` : null;
+    }
+    switch (info.type) {
+      case "Instructional":
+        return info.num != null ? `${short ? "Wk" : "Week"} ${info.num}` : null;
+      case "Recess":
+        return short ? "Recess" : "Recess week";
+      case "Reading":
+        return short ? "Reading" : "Reading week";
+      case "Examination":
+        return `${short ? "Exam" : "Examination"} ${info.num ?? ""}`.trim();
+      case "Orientation":
+        return short ? "Orientation" : "Orientation week";
+      default:
+        return null;
+    }
+  })();
+
+  if (short) {
+    // Compact chip for narrow headers: no AY prefix, just sem + period.
+    if (!info.sem) return "Vacation";
+    return periodPart ? `${semPart} · ${periodPart}` : semPart;
+  }
+
+  if (!info.sem) return periodPart ? `${ay} · ${periodPart}` : ay;
+  return periodPart ? `${ay} · ${semPart} · ${periodPart}` : `${ay} · ${semPart}`;
+}
