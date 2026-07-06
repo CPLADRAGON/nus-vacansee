@@ -1,6 +1,6 @@
 # NUS Vacansee — Roadmap & Deployment Evaluation
 
-_Last updated: 2026-07-04 (crowd-sourced reports shipped) · Living document_
+_Last updated: 2026-07-06 (data pipeline & crowd reports confirmed live in production) · Living document_
 
 This document captures (1) an honest evaluation of whether the current
 deployment can scale to real student usage, and (2) a prioritized roadmap to
@@ -15,29 +15,28 @@ dependencies.
 
 ## 0. Rollout readiness verdict (TL;DR)
 
-**Getting closer — one product gap left (partially mitigated), one pending a dashboard flip:**
+**Very close — infra is live and verified; one deliberate product gap remains:**
 
 | Area | Status | Verdict |
 |---|---|---|
 | **Hosting/compute** | Static SPA on Vercel, all occupancy math runs client-side | ✅ **Ready.** Scales to hundreds of thousands of visits/month for free. |
-| **Data-fetch path** | **Self-hosted compacted data pipeline shipped (2026-07-03)** — `/api/venues` (edge-cached) + daily Vercel Cron refresh via Vercel Blob, replacing per-user direct NUSMods/GitHub fetches. See §2.4. | ✅ **Code shipped.** Requires a one-time Vercel dashboard setup (Blob store + `CRON_SECRET`) before it's active in production — see §2.4. |
-| **Accuracy/trust** | Availability inferred from class timetables, now supplemented by crowd-sourced reports (2026-07-04) and honest "no data"/last-updated signals (2026-07-04); opening-hours/access awareness still missing | ⚠️ **Improved, but opening-hours/access is still the #1 remaining gap** — see §4. |
-| **Usage visibility** | **Vercel Web Analytics wired in (2026-07-03)** — `@vercel/analytics` added to root layout | ✅ Ready to observe real volume once enabled (see below). |
+| **Data-fetch path** | Self-hosted compacted data pipeline shipped **and confirmed connected in production (2026-07-06)** — Blob store + `CRON_SECRET` both present. See §2.4. | ✅ **Live.** (Recommend a one-time sanity check that the daily cron has actually run once — see §2.4 note.) |
+| **Accuracy/trust** | Class-timetable availability + crowd-sourced reports (verified working end-to-end in production, 2026-07-06) + honest "no data"/last-updated signals + correct NUS academic calendar (incl. special terms) | ⚠️ **Solid, one deliberate gap:** opening-hours/access awareness is not implemented (no public data source) — see §4. |
+| **Usage visibility** | Vercel Web Analytics wired in (2026-07-03) | ⚠️ **Confirm the "Enable" click was done** in the Vercel dashboard's Analytics tab — can't be verified from the repo. |
 
-**To start seeing volume stats:** open the project in the Vercel dashboard →
-**Analytics** tab → click **Enable**. This can't be toggled from the repo —
-it's a one-time dashboard action per project. Once enabled, subsequent
-deployments will report page views, unique visitors, and top pages with no
-further code changes. It's privacy-friendly (no cookies, no PII, GDPR-safe)
-and has a free tier suitable for a student project.
+**Bottom line:** every "Now" priority infra/trust item is either done or explicitly, deliberately deferred with a documented reason. There is no remaining *unknown* blocker — what's left is (a) two quick dashboard confirmations, and (b) a product decision about whether to launch without opening-hours awareness or wait. See the pre-launch checklist below.
 
-**To activate the compacted data pipeline in production:** connect a Vercel
-Blob store to the project and set a `CRON_SECRET` env var (see §2.4 for the
-exact steps — both are one-time Vercel dashboard actions that can't be done
-from the repo). Until then, the app still works correctly: `/api/venues`
-gracefully falls back to a live NUSMods fetch on every request when Blob
-credentials are absent, so nothing breaks — it just doesn't get the
-bandwidth/scale benefit until the dashboard setup is done.
+### Pre-launch checklist
+- [x] Core availability engine correct (NUS academic calendar incl. special terms, honest occupancy states)
+- [x] Scales without cost/responsibility risk to NUSMods (data pipeline live in production)
+- [x] Trust signals in place (last-updated, "no data" honesty, crowd-sourced corrections — all verified working)
+- [x] Legal/attribution (NUSMods MIT credit, OneMap/SLA credit, "not affiliated with NUS" disclaimer, Acknowledgements page)
+- [x] Usage analytics wired
+- [ ] Confirm Vercel Web Analytics "Enable" was clicked (2-minute dashboard check)
+- [ ] Confirm the daily cron has run at least once successfully (Vercel dashboard → Cron Jobs → check last execution; or hit `/api/venues` and check the response is fast/edge-served rather than a live cold-start)
+- [ ] **Decision needed:** launch now accepting the opening-hours/access gap (mitigated by "verify on site" caveats + crowd reports), or wait for organic crowd-report signal to partially cover it first
+- [ ] Optional: a final cross-device/cross-browser smoke test before a big push
+- [ ] Optional: prepare where you'll announce (NUS Telegram groups, r/NationalUniversityofSingapore, class group chats, etc.) — worth planning alongside the tech readiness
 
 ---
 
