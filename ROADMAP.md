@@ -116,7 +116,10 @@ Static Next.js SPA on Vercel + browser-side fetch of third-party data
 **⚠️ One-time manual setup required before this is live in production** (can't
 be done from the repo/CLI):
 1. Vercel dashboard → **Storage → Blob → Create/Connect** a Blob store for
-   this project (auto-injects `BLOB_READ_WRITE_TOKEN`).
+   this project. Depending on how your account is set up, Vercel auto-injects
+   either the classic `BLOB_READ_WRITE_TOKEN` **or** the newer OIDC-based
+   `BLOB_STORE_ID` + an automatic `VERCEL_OIDC_TOKEN` at runtime — both are
+   supported by `@vercel/blob` and by our `isBlobConfigured()` check.
 2. Vercel dashboard → **Settings → Environment Variables** → add `CRON_SECRET`
    (any random string).
 3. Redeploy — Vercel registers the cron schedule from `vercel.json` automatically.

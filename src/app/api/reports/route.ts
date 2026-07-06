@@ -52,8 +52,14 @@ async function writeReports(map: ReportsMap): Promise<void> {
   });
 }
 
+// Vercel Blob supports two auth methods: the classic static
+// BLOB_READ_WRITE_TOKEN, or newer OIDC-based auth (BLOB_STORE_ID +
+// an automatically-injected VERCEL_OIDC_TOKEN at runtime). Dashboard-connected
+// stores commonly use the OIDC method now, so BLOB_STORE_ID alone is a valid
+// signal that the store is properly connected — VERCEL_OIDC_TOKEN itself is a
+// short-lived system variable we shouldn't gate on directly.
 function isBlobConfigured(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
 }
 
 export async function GET() {
