@@ -52,14 +52,22 @@ async function writeReports(map: ReportsMap): Promise<void> {
   });
 }
 
+function isBlobConfigured(): boolean {
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+}
+
 export async function GET() {
-  const map = pruneReports(await readReports(), Date.now());
-  return NextResponse.json(map, {
-    headers: {
-      // Short TTL: this is a live community signal, not the daily venue snapshot.
-      "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
-    },
-  });
+  const configured = isBlobConfigured();
+  const map = configured ? pruneReports(await readReports(), Date.now()) : {};
+  return NextResponse.json(
+    { reports: map, blobConfigured: configured },
+    {
+      headers: {
+        // Short TTL: this is a live community signal, not the daily venue snapshot.
+        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+      },
+    }
+  );
 }
 
 export async function POST(request: Request) {
@@ -81,6 +89,17 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Body must be { venue: string, status: 'free'|'occupied'|'locked' }" },
       { status: 400 }
+    );
+  }
+
+  if (!isBlobConfigured()) {
+    // Blob store hasn't been connected in the Vercel dashboard yet (see
+    // ROADMAP.md S2.4). Distinguishable from a transient failure so the
+    // client can show an honest "not available yet" state instead of
+    // repeatedly implying "just retry".
+    return NextResponse.json(
+      { ok: false, error: "Reports storage is not configured yet.", notConfigured: true },
+      { status: 503 }
     );
   }
 

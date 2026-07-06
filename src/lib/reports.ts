@@ -9,18 +9,34 @@ export interface Report {
 
 export type ReportsMap = Record<string, Report[]>;
 
+export interface FetchReportsResult {
+  reports: ReportsMap;
+  // False when the backing Blob store hasn't been connected in the Vercel
+  // dashboard yet (see ROADMAP.md S2.4) or the request failed outright.
+  // Lets the UI show an honest "not available yet" state instead of
+  // interactive-looking buttons that would silently fail on every tap.
+  available: boolean;
+}
+
 const COOLDOWN_KEY_PREFIX = "vacansee_report_cooldown_";
 const COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes per venue, per browser
 
 // Fetch all venues' recent (< 30 min old) community reports in one call.
 // Small, edge-cached; safe to call once per venue-detail open.
-export async function fetchReports(): Promise<ReportsMap> {
+export async function fetchReports(): Promise<FetchReportsResult> {
   try {
     const res = await fetch("/api/reports", { cache: "no-store" });
-    if (!res.ok) return {};
-    return (await res.json()) as ReportsMap;
+    if (!res.ok) return { reports: {}, available: false };
+    const data = (await res.json()) as {
+      reports?: ReportsMap;
+      blobConfigured?: boolean;
+    };
+    return {
+      reports: data.reports ?? {},
+      available: Boolean(data.blobConfigured),
+    };
   } catch {
-    return {};
+    return { reports: {}, available: false };
   }
 }
 

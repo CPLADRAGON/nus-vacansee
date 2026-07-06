@@ -58,17 +58,23 @@ export default function VenueDetail({
   );
   const [showMap, setShowMap] = useState(false);
   const [reports, setReports] = useState<Report[] | null>(null);
+  const [reportsAvailable, setReportsAvailable] = useState<boolean | null>(null); // null = still checking
   const [submitting, setSubmitting] = useState<ReportStatus | null>(null);
   const [justSubmitted, setJustSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
   const [onCooldown, setOnCooldown] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setReports(null);
     setJustSubmitted(false);
+    setSubmitError(false);
+    setReportsAvailable(null);
     setOnCooldown(isOnCooldown(venue));
-    fetchReports().then((map) => {
-      if (!cancelled) setReports(map[venue] ?? []);
+    fetchReports().then(({ reports: map, available }) => {
+      if (cancelled) return;
+      setReports(map[venue] ?? []);
+      setReportsAvailable(available);
     });
     return () => {
       cancelled = true;
@@ -79,11 +85,14 @@ export default function VenueDetail({
 
   const handleReport = async (status: ReportStatus) => {
     setSubmitting(status);
+    setSubmitError(false);
     const ok = await submitReport(venue, status);
     setSubmitting(null);
     if (ok) {
       setJustSubmitted(true);
       setOnCooldown(true);
+    } else {
+      setSubmitError(true);
     }
   };
 
@@ -204,7 +213,11 @@ export default function VenueDetail({
               {formatRelativeTime(reportSummary.latestTs, now)}
             </p>
           )}
-          {justSubmitted ? (
+          {reportsAvailable === false ? (
+            <p className="text-xs text-zinc-400">
+              Community reports aren't available yet — check back soon.
+            </p>
+          ) : justSubmitted ? (
             <p className="text-xs font-medium text-emerald-600">
               Thanks for confirming! This helps other students.
             </p>
@@ -218,13 +231,19 @@ export default function VenueDetail({
                   <button
                     key={s}
                     onClick={() => handleReport(s)}
-                    disabled={submitting !== null || onCooldown}
+                    disabled={submitting !== null || onCooldown || reportsAvailable === null}
                     className="flex-1 rounded-lg border border-zinc-200 bg-white/70 px-2 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:border-nus-blue hover:text-nus-blue disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {submitting === s ? "…" : REPORT_LABEL[s]}
                   </button>
                 ))}
               </div>
+              {submitError && (
+                <p className="mt-2 text-[11px] text-amber-600">
+                  Couldn't submit your report right now — please try again in
+                  a moment.
+                </p>
+              )}
             </>
           )}
         </div>
