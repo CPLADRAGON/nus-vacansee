@@ -52,6 +52,23 @@ async function writeReports(map: ReportsMap): Promise<void> {
   });
 }
 
+// Physically removes expired reports from Blob storage (not just from a
+// single response). GET/POST already filter expired reports out of what they
+// *show*, but neither writes the cleaned-up result back — a venue that gets
+// one report and is never reported on again would otherwise sit in storage
+// indefinitely (harmless at this app's scale, but not actually cleaned up).
+// Called from the daily cron (src/app/api/cron/refresh-venues/route.ts) so
+// there's a real, scheduled sweep independent of read/write traffic.
+export async function sweepExpiredReports(): Promise<{ before: number; after: number }> {
+  if (!isBlobConfigured()) return { before: 0, after: 0 };
+  const raw = await readReports();
+  const before = Object.keys(raw).length;
+  const pruned = pruneReports(raw, Date.now());
+  const after = Object.keys(pruned).length;
+  if (before > 0) await writeReports(pruned);
+  return { before, after };
+}
+
 // Vercel Blob supports two auth methods: the classic static
 // BLOB_READ_WRITE_TOKEN, or newer OIDC-based auth (BLOB_STORE_ID +
 // an automatically-injected VERCEL_OIDC_TOKEN at runtime). Dashboard-connected
