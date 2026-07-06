@@ -91,6 +91,11 @@ export default function VenueDetail({
     if (ok) {
       setJustSubmitted(true);
       setOnCooldown(true);
+      // Optimistically reflect the new report locally instead of waiting on a
+      // refetch — Vercel Blob's CDN can take a few seconds to propagate a
+      // brand-new write, so re-fetching immediately could still show stale
+      // (empty) data even though the submission succeeded.
+      setReports((prev) => [...(prev ?? []), { status, ts: Date.now() }]);
     } else {
       setSubmitError(true);
     }
