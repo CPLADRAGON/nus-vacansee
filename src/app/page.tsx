@@ -178,6 +178,41 @@ export default function Home() {
     });
   }, [withOccupancy, cluster, search, roomType, savedOnly, minFree, favorites]);
 
+  // Same as `filtered` but ignoring the "refinement" filters (room type,
+  // duration, saved-only) — kept to just cluster + search. Used to detect
+  // when a search/cluster genuinely matches a venue that's only hidden by
+  // those refinement filters, so we can show a specific, actionable message
+  // ("N rooms match X but are hidden by your filters") instead of a generic
+  // "no results", and offer a one-tap way to clear just those filters.
+  const filteredIgnoringRefinements = useMemo(() => {
+    let result = withOccupancy;
+    if (cluster) result = result.filter((v) => v.entry.cluster === cluster);
+    if (search.trim()) {
+      const q = search.trim().toUpperCase();
+      result = result.filter((v) => v.code.toUpperCase().includes(q));
+    }
+    return result;
+  }, [withOccupancy, cluster, search]);
+
+  const activeRefinementLabels = useMemo(() => {
+    const labels: string[] = [];
+    if (roomType) labels.push(roomType);
+    if (minFree > 0) labels.push(`≥ ${minFree / 60}h`);
+    if (savedOnly) labels.push("Saved");
+    return labels;
+  }, [roomType, minFree, savedOnly]);
+
+  const hiddenByFilters =
+    filtered.length === 0 &&
+    filteredIgnoringRefinements.length > 0 &&
+    activeRefinementLabels.length > 0;
+
+  const clearRefinementFilters = useCallback(() => {
+    setRoomType(null);
+    setMinFree(0);
+    setSavedOnly(false);
+  }, []);
+
   const nearShown = showAllNear ? nearMe : nearMe.slice(0, NEAR_ME_LIMIT);
 
   const mapRooms = useMemo(() => {
@@ -293,8 +328,12 @@ export default function Home() {
               onShowAll={() => {
                 setShowAll(true);
                 setCluster(null);
-                setSearch("");
                 setSavedOnly(false);
+                // Search text is intentionally preserved: "All venues" widens
+                // scope, it shouldn't erase what the user typed. This is the
+                // fix for a reported dead-end — a search hidden by an active
+                // room-type/duration filter used to force users to retype
+                // their search after tapping this button.
               }}
               minFree={minFree}
               onMinFreeSelect={setMinFree}
@@ -303,8 +342,9 @@ export default function Home() {
               savedCount={favorites.size}
               onClusterSelect={(c) => {
                 setCluster(c);
-                setSearch("");
                 setShowAll(false);
+                // Search text intentionally preserved here too, for the same
+                // reason as onShowAll above.
               }}
               onSearchChange={setSearch}
               onAutoDetect={handleAutoDetect}
@@ -359,9 +399,27 @@ export default function Home() {
                     isFavorite={isFavorite}
                     onToggleFavorite={toggleFavorite}
                     emptyMessage={
-                      savedOnly
-                        ? "No saved rooms yet — tap the ★ on a room to save it."
-                        : "No rooms match your search."
+                      hiddenByFilters ? (
+                        <>
+                          {filteredIgnoringRefinements.length} room
+                          {filteredIgnoringRefinements.length !== 1 ? "s" : ""}
+                          {search ? ` match "${search}"` : " match your search"}{" "}
+                          but {filteredIgnoringRefinements.length !== 1 ? "are" : "is"}{" "}
+                          hidden by your filters (
+                          {activeRefinementLabels.join(", ")}).
+                          <br />
+                          <button
+                            onClick={clearRefinementFilters}
+                            className="mt-2 rounded-full border border-nus-blue/30 bg-white/60 px-3 py-1 text-xs font-medium text-nus-blue transition-colors hover:bg-nus-blue/5"
+                          >
+                            Clear filters
+                          </button>
+                        </>
+                      ) : savedOnly ? (
+                        "No saved rooms yet — tap the ★ on a room to save it."
+                      ) : (
+                        "No rooms match your search."
+                      )
                     }
                     onVenueSelect={openDetail}
                   />

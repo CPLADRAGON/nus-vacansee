@@ -10,7 +10,7 @@ interface Props {
   userLoc: { lat: number; lng: number } | null;
   isFavorite?: (venue: string) => boolean;
   onToggleFavorite?: (venue: string) => void;
-  emptyMessage?: string;
+  emptyMessage?: React.ReactNode;
   onVenueSelect: (venue: string, entry: VenueEntry) => void;
 }
 
