@@ -28,6 +28,14 @@ export async function GET() {
 
     return NextResponse.json(matrix, {
       headers: {
+        // NOTE (verified live 2026-07-07): Vercel's edge normalizes the
+        // client-visible Cache-Control header down to just "public" on cache
+        // hits — it does not echo s-maxage/stale-while-revalidate back to the
+        // browser — but it DOES honor these directives internally for its own
+        // edge caching decisions. Confirmed via a real production request
+        // showing `x-vercel-cache: HIT` and `age: 576` (within the 1h
+        // s-maxage window). This is expected CDN behavior, not a bug — do not
+        // "fix" this by trying to force the raw header through.
         "Cache-Control":
           "public, s-maxage=3600, stale-while-revalidate=86400",
       },

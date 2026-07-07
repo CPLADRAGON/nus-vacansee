@@ -251,6 +251,12 @@ export default function LocationPrompt({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           onFocus={() => setFocused(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setFocused(false);
+              inputRef.current?.blur();
+            }
+          }}
           placeholder="Search building, block or LT code (e.g., E3, COM1)…"
           className="w-full rounded-lg border border-zinc-200 bg-white/60 px-4 py-2.5 text-sm text-zinc-800 placeholder-zinc-400 outline-none transition-colors focus:border-nus-orange focus:ring-2 focus:ring-nus-orange/20"
         />

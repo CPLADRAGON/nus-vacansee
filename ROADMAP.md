@@ -15,27 +15,33 @@ dependencies.
 
 ## 0. Rollout readiness verdict (TL;DR)
 
-**Very close — infra is live and verified; one deliberate product gap remains:**
+**Very close — infra confirmed live in production; one deliberate product gap remains:**
 
 | Area | Status | Verdict |
 |---|---|---|
 | **Hosting/compute** | Static SPA on Vercel, all occupancy math runs client-side | ✅ **Ready.** Scales to hundreds of thousands of visits/month for free. |
-| **Data-fetch path** | Self-hosted compacted data pipeline shipped **and confirmed connected in production (2026-07-06)** — Blob store + `CRON_SECRET` both present. See §2.4. | ✅ **Live.** (Recommend a one-time sanity check that the daily cron has actually run once — see §2.4 note.) |
-| **Accuracy/trust** | Class-timetable availability + crowd-sourced reports (verified working end-to-end in production, 2026-07-06) + honest "no data"/last-updated signals + correct NUS academic calendar (incl. special terms) | ⚠️ **Solid, one deliberate gap:** opening-hours/access awareness is not implemented (no public data source) — see §4. |
-| **Usage visibility** | Vercel Web Analytics wired in (2026-07-03) | ⚠️ **Confirm the "Enable" click was done** in the Vercel dashboard's Analytics tab — can't be verified from the repo. |
+| **Data-fetch path** | Self-hosted compacted data pipeline **confirmed live and running on schedule (2026-07-07)** — Blob connected, `CRON_SECRET` set, daily cron verified executing (manual trigger + `generated_at` freshness both checked). See §2.4. | ✅ **Live and verified.** |
+| **Accuracy/trust** | Class-timetable availability + crowd-sourced reports (**verified end-to-end live, 2026-07-06/07** — a real report was submitted and displayed correctly) + honest "no data"/last-updated signals + correct NUS academic calendar (incl. special terms) | ⚠️ **Solid, one deliberate gap:** opening-hours/access awareness is not implemented (no public data source) — see §4. |
+| **Usage visibility** | Vercel Web Analytics wired in (2026-07-03), **Enable confirmed clicked (2026-07-06)** | ✅ **Live.** |
+| **Live QA pass** | Full browser-based QA against production (2026-07-07): homepage, browse/search, venue detail, timetable, crowd reports, directions, map, mobile, modals, PWA manifest — all clean. One real bug found and fixed (search dropdown Escape key), one pre-existing hydration timing issue found and fixed (header clock), two documentation-only findings (payload size, Cache-Control header behavior) resolved by updating this doc. | ✅ **Passed.** See "Live QA findings" below. |
 
-**Bottom line:** every "Now" priority infra/trust item is either done or explicitly, deliberately deferred with a documented reason. There is no remaining *unknown* blocker — what's left is (a) two quick dashboard confirmations, and (b) a product decision about whether to launch without opening-hours awareness or wait. See the pre-launch checklist below.
+**Bottom line:** every "Now" priority infra/trust item is done and *verified live*, not just shipped. There is no remaining *unknown* blocker — what's left is a single product decision about whether to launch without opening-hours awareness or wait. See the pre-launch checklist below.
+
+### Live QA findings (2026-07-07)
+A full browser-based QA pass was run against `https://nus-vacansee.vercel.app` (Playwright), covering every core flow. Findings and resolutions:
+- **Fixed:** search suggestions dropdown didn't close on `Escape` (`LocationPrompt.tsx` had no keydown handler, only click-outside). Added.
+- **Fixed:** header clock occasionally triggered a React hydration mismatch (error #418) — the clock value was computed once during SSR and again on client hydration, and if a minute boundary fell in between, the text differed. Fixed by rendering the clock text client-only (mount-gated), leaving the underlying `now` state (used for occupancy calculations) untouched.
+- **Documented (no code change needed):** `/api/venues` payload is ~2.5MB decompressed (bigger than this doc's old estimate — see §2.4) and its `Cache-Control` header is normalized by Vercel's edge — both confirmed harmless with live evidence, details in §2.4.
+- **Deliberately not touched:** opening-hours/access gap (see §4, §6).
 
 ### Pre-launch checklist
 - [x] Core availability engine correct (NUS academic calendar incl. special terms, honest occupancy states)
-- [x] Scales without cost/responsibility risk to NUSMods (data pipeline live in production)
-- [x] Trust signals in place (last-updated, "no data" honesty, crowd-sourced corrections — all verified working)
+- [x] Scales without cost/responsibility risk to NUSMods (data pipeline live and verified running on schedule)
+- [x] Trust signals in place (last-updated, "no data" honesty, crowd-sourced corrections — all verified working live)
 - [x] Legal/attribution (NUSMods MIT credit, OneMap/SLA credit, "not affiliated with NUS" disclaimer, Acknowledgements page)
-- [x] Usage analytics wired
-- [ ] Confirm Vercel Web Analytics "Enable" was clicked (2-minute dashboard check)
-- [ ] Confirm the daily cron has run at least once successfully (Vercel dashboard → Cron Jobs → check last execution; or hit `/api/venues` and check the response is fast/edge-served rather than a live cold-start)
+- [x] Usage analytics wired and enabled
+- [x] Full live QA pass completed (2026-07-07) — see findings above
 - [ ] **Decision needed:** launch now accepting the opening-hours/access gap (mitigated by "verify on site" caveats + crowd reports), or wait for organic crowd-report signal to partially cover it first
-- [ ] Optional: a final cross-device/cross-browser smoke test before a big push
 - [ ] Optional: prepare where you'll announce (NUS Telegram groups, r/NationalUniversityofSingapore, class group chats, etc.) — worth planning alongside the tech readiness
 
 ---
@@ -88,7 +94,8 @@ Static Next.js SPA on Vercel + browser-side fetch of third-party data
 ### 2.4 Recommended infra change (high priority)
 
 ~~Introduce a build-time / scheduled data pipeline that we host ourselves~~
-**Done (2026-07-03).** Design: `docs/superpowers/specs/2026-07-03-data-pipeline-design.md`.
+**Done (2026-07-03), confirmed live in production (2026-07-06/07).** Design:
+`docs/superpowers/specs/2026-07-03-data-pipeline-design.md`.
 
 - **Vercel Cron** (`vercel.json`, daily at 18:00 UTC / ~02:00 SGT) triggers a
   protected route (`/api/cron/refresh-venues`, guarded by a `CRON_SECRET`
@@ -99,6 +106,12 @@ Static Next.js SPA on Vercel + browser-side fetch of third-party data
 - The app's own **`/api/venues`** route serves that snapshot with
   `Cache-Control: public, s-maxage=3600, stale-while-revalidate=86400`, so
   Vercel's CDN absorbs almost all requests regardless of visitor count.
+  **Live-verified (2026-07-07):** the client-facing response header is
+  normalized down to just `Cache-Control: public` by Vercel's edge (it does
+  not echo the raw `s-maxage`/`stale-while-revalidate` values), but the
+  directive is honored internally — confirmed via `x-vercel-cache: HIT` and
+  `age: 576` (~9.6 min into the 1h window) on a real production request. This
+  is Vercel normalizing the client-visible header, not a bug; no action needed.
 - **Cold-start / resilience:** if Blob is empty or unreachable (first deploy,
   before the first cron tick, or any Blob outage), `/api/venues` transparently
   falls back to a live `fetchVenueData()` call and best-effort re-warms Blob —
@@ -111,9 +124,23 @@ Static Next.js SPA on Vercel + browser-side fetch of third-party data
   mechanism that failed with a 403 permission error early in this project
   (see the top of this doc's history). Vercel Cron + Blob has no git-commit
   step, so that class of failure cannot recur.
+- **Payload size (measured live, 2026-07-07):** `/api/venues` is **~2.5MB
+  decompressed** (644 venues) — larger than this doc's original "~300–600KB"
+  estimate, which pre-dated adding 2 special-term semesters and richer
+  per-class fields (`lessonType`, `classNo`, `dates`). Real-world impact is
+  low: Vercel serves it Brotli-compressed over the wire, and it's edge-cached
+  (confirmed `HIT` in production), so this isn't a live problem — but it's
+  worth revisiting field-level compaction if usage grows enough to make the
+  origin-refresh cost or client parse time noticeable.
 
-**⚠️ One-time manual setup required before this is live in production** (can't
-be done from the repo/CLI):
+**Production status (confirmed 2026-07-06/07):** the Blob store is connected,
+`CRON_SECRET` is set, the daily cron has run successfully (verified via a
+manual trigger — 200, fetched all 4 semesters + `venues.json` in ~5s — and via
+`/api/venues`'s `generated_at` matching the scheduled run time), and
+crowd-sourced reports have been verified working end-to-end live (a real
+report was submitted, stored, and displayed correctly). Setup steps below are
+kept for reference / disaster-recovery:
+
 1. Vercel dashboard → **Storage → Blob → Create/Connect** a Blob store for
    this project. Depending on how your account is set up, Vercel auto-injects
    either the classic `BLOB_READ_WRITE_TOKEN` **or** the newer OIDC-based
@@ -123,9 +150,9 @@ be done from the repo/CLI):
    (any random string).
 3. Redeploy — Vercel registers the cron schedule from `vercel.json` automatically.
 
-Until step 1–2 are done, `/api/venues` still works correctly (cold-start
-fallback path), so nothing breaks — the app just doesn't get the
-bandwidth/scale benefit yet.
+If Blob or `CRON_SECRET` were ever removed, `/api/venues` still works
+correctly (cold-start fallback path), so nothing would break — it would just
+lose the bandwidth/scale benefit until reconnected.
 
 **Benefits:** ~10× smaller payload, fast on mobile, removes the GitHub-raw rate
 limit, and reduces NUSMods origin load from "per user" to "once per day for the

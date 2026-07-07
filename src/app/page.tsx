@@ -50,6 +50,13 @@ export default function Home() {
   const [ackOpen, setAckOpen] = useState(false);
   const [detailVenue, setDetailVenue] = useState<[string, VenueEntry] | null>(null);
   const autoRequested = useRef(false);
+  // Gates the header clock's *displayed text* only (not `now`, which correctly
+  // drives occupancy calculations from first render). `now` is computed once
+  // during SSR and again during client hydration — those two calls happen at
+  // genuinely different instants, so if a minute boundary falls between them
+  // the rendered "HH:MM" text can differ and trigger a hydration mismatch.
+  // Rendering the clock text only after mount sidesteps that entirely.
+  const [clockMounted, setClockMounted] = useState(false);
 
   const userLoc = useMemo(
     () => (geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null),
@@ -66,6 +73,7 @@ export default function Home() {
 
   // Live clock tick
   useEffect(() => {
+    setClockMounted(true);
     const id = setInterval(() => setNow(getSingaporeTime()), 30_000);
     return () => clearInterval(id);
   }, []);
@@ -216,11 +224,13 @@ export default function Home() {
               <span className="hidden min-[400px]:inline">Feedback</span>
             </button>
             <span className="whitespace-nowrap font-mono text-xs font-medium tabular-nums text-white/60">
-              {now.toLocaleTimeString("en-SG", {
-                hour: "2-digit",
-                minute: "2-digit",
-                timeZone: "Asia/Singapore",
-              })}
+              {clockMounted
+                ? now.toLocaleTimeString("en-SG", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    timeZone: "Asia/Singapore",
+                  })
+                : "--:-- --"}
             </span>
           </div>
         </div>
