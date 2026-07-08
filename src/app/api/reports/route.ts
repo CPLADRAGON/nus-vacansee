@@ -48,7 +48,12 @@ async function writeReports(map: ReportsMap): Promise<void> {
     addRandomSuffix: false,
     allowOverwrite: true,
     contentType: "application/json",
-    cacheControlMaxAge: 60,
+    // This is a live, frequently-changing crowd signal (unlike the daily
+    // venue snapshot) — any positive cache TTL here means a freshly
+    // submitted report can be invisible to the very next read for that long.
+    // The file is tiny and traffic is low, so we trade a little caching
+    // efficiency for read-after-write correctness.
+    cacheControlMaxAge: 0,
   });
 }
 
@@ -86,8 +91,10 @@ export async function GET() {
     { reports: map, blobConfigured: configured },
     {
       headers: {
-        // Short TTL: this is a live community signal, not the daily venue snapshot.
-        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+        // Deliberately uncached: this is a live community signal, and any
+        // edge caching here can make a report a user just submitted
+        // invisible to their own next read for tens of seconds.
+        "Cache-Control": "no-store",
       },
     }
   );

@@ -23,8 +23,13 @@ export interface FetchReportsResult {
 const COOLDOWN_KEY_PREFIX = "vacansee_report_cooldown_";
 const COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes per venue, per browser
 
+const LOCAL_REPORT_KEY_PREFIX = "vacansee_report_local_";
+const LOCAL_REPORT_TTL_MS = 10 * 60 * 1000; // 10 minutes — just needs to
+// outlast any residual server-side propagation delay, not act as a lasting
+// cache; the Blob store remains the single source of truth for everyone else.
+
 // Fetch all venues' recent (< 30 min old) community reports in one call.
-// Small, edge-cached; safe to call once per venue-detail open.
+// Small; safe to call once per venue-detail open.
 export async function fetchReports(): Promise<FetchReportsResult> {
   try {
     const res = await fetch("/api/reports", { cache: "no-store" });
@@ -53,7 +58,10 @@ export async function submitReport(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ venue, status }),
     });
-    if (res.ok) setCooldown(venue);
+    if (res.ok) {
+      setCooldown(venue);
+      cacheLocalReport(venue, status, Date.now());
+    }
     return res.ok;
   } catch {
     return false;
@@ -78,6 +86,34 @@ export function isOnCooldown(venue: string): boolean {
     return Date.now() - parseInt(raw, 10) < COOLDOWN_MS;
   } catch {
     return false;
+  }
+}
+
+// Safety net for the read-after-write gap: even with caching minimized (see
+// src/app/api/reports/route.ts), a fresh report can still take a moment to
+// show up in a subsequent GET. Remembering the user's own submission locally
+// means reopening the venue detail always reflects it immediately, without
+// waiting on — or trusting — the server round-trip.
+function cacheLocalReport(venue: string, status: ReportStatus, ts: number): void {
+  try {
+    localStorage.setItem(
+      LOCAL_REPORT_KEY_PREFIX + venue,
+      JSON.stringify({ status, ts })
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+export function getLocalReport(venue: string): Report | null {
+  try {
+    const raw = localStorage.getItem(LOCAL_REPORT_KEY_PREFIX + venue);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Report;
+    if (Date.now() - parsed.ts > LOCAL_REPORT_TTL_MS) return null;
+    return parsed;
+  } catch {
+    return null;
   }
 }
 

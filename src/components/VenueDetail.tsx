@@ -11,6 +11,7 @@ import {
   isOnCooldown,
   summarizeReports,
   currentReportValue,
+  getLocalReport,
   type Report,
   type ReportStatus,
 } from "@/lib/reports";
@@ -82,7 +83,21 @@ export default function VenueDetail({
     setOnCooldown(isOnCooldown(venue));
     fetchReports().then(({ reports: map, available }) => {
       if (cancelled) return;
-      setReports(map[venue] ?? []);
+      let venueReports = map[venue] ?? [];
+      // Bridge any residual read-after-write delay: if we locally remember
+      // submitting a report that the server round-trip doesn't (yet) show,
+      // merge it in so the summary reflects it immediately instead of
+      // appearing to have been lost.
+      const local = getLocalReport(venue);
+      if (
+        local &&
+        !venueReports.some(
+          (r) => r.status === local.status && Math.abs(r.ts - local.ts) < 5000
+        )
+      ) {
+        venueReports = [...venueReports, local];
+      }
+      setReports(venueReports);
       setReportsAvailable(available);
     });
     return () => {
