@@ -10,6 +10,7 @@ import {
   submitReport,
   isOnCooldown,
   summarizeReports,
+  currentReportValue,
   type Report,
   type ReportStatus,
 } from "@/lib/reports";
@@ -63,6 +64,12 @@ export default function VenueDetail({
   const [justSubmitted, setJustSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState(false);
   const [onCooldown, setOnCooldown] = useState(false);
+  // True after tapping "No" — the line has expanded to show the two
+  // alternative statuses instead of the Yes/No prompt.
+  const [showAlternatives, setShowAlternatives] = useState(false);
+  // Which flow produced the current "Thanks..." message, so the copy can
+  // differ between confirming ("Yes") and correcting ("No" -> alternative).
+  const [lastAction, setLastAction] = useState<"confirm" | "correct" | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,6 +77,8 @@ export default function VenueDetail({
     setJustSubmitted(false);
     setSubmitError(false);
     setReportsAvailable(null);
+    setShowAlternatives(false);
+    setLastAction(null);
     setOnCooldown(isOnCooldown(venue));
     fetchReports().then(({ reports: map, available }) => {
       if (cancelled) return;
@@ -83,13 +92,26 @@ export default function VenueDetail({
 
   const reportSummary = useMemo(() => summarizeReports(reports ?? undefined), [reports]);
 
-  const handleReport = async (status: ReportStatus) => {
+  // The report value that matches the currently-displayed status (what a
+  // "Yes" tap confirms), and the two remaining values a "No" tap can pick
+  // from (see docs/superpowers/specs/2026-07-08-compact-crowd-report-design.md).
+  const mappedCurrent = useMemo(
+    () => currentReportValue(occupancy.status),
+    [occupancy.status]
+  );
+  const alternatives = useMemo(
+    () => (["free", "occupied", "locked"] as const).filter((s) => s !== mappedCurrent),
+    [mappedCurrent]
+  );
+
+  const handleReport = async (status: ReportStatus, action: "confirm" | "correct") => {
     setSubmitting(status);
     setSubmitError(false);
     const ok = await submitReport(venue, status);
     setSubmitting(null);
     if (ok) {
       setJustSubmitted(true);
+      setLastAction(action);
       setOnCooldown(true);
       // Optimistically reflect the new report locally instead of waiting on a
       // refetch — Vercel Blob's CDN can take a few seconds to propagate a
@@ -206,52 +228,73 @@ export default function VenueDetail({
           </p>
         )}
 
-        {/* Crowd-sourced ground truth */}
-        <div className="mb-4 rounded-lg border border-zinc-200/70 bg-white/50 p-3">
-          {reportSummary && (
-            <p className="mb-2 text-xs text-zinc-500">
-              {reportSummary.count} student{reportSummary.count > 1 ? "s" : ""}{" "}
-              reported this{" "}
-              <span className="font-medium text-zinc-700">
-                {REPORT_LABEL[reportSummary.status]}
-              </span>{" "}
-              {formatRelativeTime(reportSummary.latestTs, now)}
-            </p>
-          )}
-          {reportsAvailable === false ? (
-            <p className="text-xs text-zinc-400">
-              Community reports aren't available yet — check back soon.
-            </p>
-          ) : justSubmitted ? (
-            <p className="text-xs font-medium text-emerald-600">
-              Thanks for confirming! This helps other students.
-            </p>
-          ) : (
-            <>
-              <p className="mb-2 text-xs font-medium text-zinc-600">
-                Is this room actually free?
+        {/* Crowd-sourced ground truth — compact, inline with the timestamp
+            rather than a separate bordered card. Hidden entirely (not just
+            disabled) when reports aren't configured, so there's zero
+            footprint when the feature isn't actually usable. See
+            docs/superpowers/specs/2026-07-08-compact-crowd-report-design.md */}
+        {reportsAvailable !== false && (
+          <div className="mb-4 space-y-1">
+            {reportSummary && (
+              <p className="text-xs text-zinc-500">
+                {reportSummary.count} student{reportSummary.count > 1 ? "s" : ""}{" "}
+                reported this{" "}
+                <span className="font-medium text-zinc-700">
+                  {REPORT_LABEL[reportSummary.status]}
+                </span>{" "}
+                {formatRelativeTime(reportSummary.latestTs, now)}
               </p>
-              <div className="flex gap-2">
-                {(["free", "occupied", "locked"] as const).map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => handleReport(s)}
-                    disabled={submitting !== null || onCooldown || reportsAvailable === null}
-                    className="flex-1 rounded-lg border border-zinc-200 bg-white/70 px-2 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:border-nus-blue hover:text-nus-blue disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    {submitting === s ? "…" : REPORT_LABEL[s]}
-                  </button>
+            )}
+            {justSubmitted ? (
+              <p className="text-xs font-medium text-emerald-600">
+                {lastAction === "confirm"
+                  ? "Thanks for confirming!"
+                  : "Thanks for reporting!"}
+              </p>
+            ) : showAlternatives ? (
+              <p className="text-xs text-zinc-500">
+                What&apos;s the actual status?{" "}
+                {alternatives.map((alt, i) => (
+                  <span key={alt}>
+                    {i > 0 && " · "}
+                    <button
+                      onClick={() => handleReport(alt, "correct")}
+                      disabled={submitting !== null}
+                      className="font-medium text-nus-blue underline underline-offset-2 hover:text-nus-blue/80 disabled:opacity-40"
+                    >
+                      {submitting === alt ? "…" : REPORT_LABEL[alt]}
+                    </button>
+                  </span>
                 ))}
-              </div>
-              {submitError && (
-                <p className="mt-2 text-[11px] text-amber-600">
-                  Couldn't submit your report right now — please try again in
-                  a moment.
-                </p>
-              )}
-            </>
-          )}
-        </div>
+              </p>
+            ) : (
+              <p className="text-xs text-zinc-500">
+                Is this correct?{" "}
+                <button
+                  onClick={() => handleReport(mappedCurrent, "confirm")}
+                  disabled={submitting !== null || onCooldown || reportsAvailable === null}
+                  className="font-medium text-nus-blue underline underline-offset-2 hover:text-nus-blue/80 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {submitting === mappedCurrent ? "…" : "Yes"}
+                </button>{" "}
+                ·{" "}
+                <button
+                  onClick={() => setShowAlternatives(true)}
+                  disabled={submitting !== null || onCooldown || reportsAvailable === null}
+                  className="font-medium text-nus-blue underline underline-offset-2 hover:text-nus-blue/80 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  No
+                </button>
+              </p>
+            )}
+            {submitError && (
+              <p className="text-[11px] text-amber-600">
+                Couldn't submit your report right now — please try again in a
+                moment.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Directions */}
         <div className="mb-3 flex flex-wrap items-center gap-2">

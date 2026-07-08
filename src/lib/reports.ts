@@ -1,5 +1,7 @@
 "use client";
 
+import type { OccupancyStatus } from "@/types";
+
 export type ReportStatus = "free" | "occupied" | "locked";
 
 export interface Report {
@@ -77,6 +79,15 @@ export function isOnCooldown(venue: string): boolean {
   } catch {
     return false;
   }
+}
+
+// Maps a computed occupancy status to the report value a "Yes, this is
+// correct" confirmation should submit, and that a "No, it's wrong"
+// correction should exclude from its two alternative options. `crunch` is a
+// display variant of `occupied` (same underlying meaning, different visual
+// treatment), so it maps to the same report value.
+export function currentReportValue(status: OccupancyStatus): ReportStatus {
+  return status === "vacant" ? "free" : "occupied";
 }
 
 // Most-recent report summary for a venue, for a compact "N students reported
