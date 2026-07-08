@@ -1,6 +1,6 @@
 # Compact Crowd-Sourced Room Report — Design
 
-_Date: 2026-07-08 · Status: Approved by user_
+_Date: 2026-07-08 · Status: Implemented (2026-07-08)_
 
 ## Context
 
