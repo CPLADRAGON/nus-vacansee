@@ -12,8 +12,8 @@
   --color-glass-bg: rgba(255, 255, 255, 0.75);
   --color-glass-border: rgba(255, 255, 255, 0.4);
 
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", SFMono-Regular, monospace;
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), SFMono-Regular, ui-monospace, monospace;
 }
 
 .glass {
