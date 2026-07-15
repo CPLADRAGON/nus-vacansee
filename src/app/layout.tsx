@@ -37,8 +37,18 @@ export const viewport = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Set the theme class before first paint to avoid a flash of the wrong
+  // theme. Reads the saved preference, falling back to the OS setting.
+  const noFlashScript = `(function(){try{var s=localStorage.getItem('vacansee_theme');var m=window.matchMedia('(prefers-color-scheme: dark)').matches;if(s==='dark'||(s!=='light'&&m)){document.documentElement.classList.add('dark');}}catch(e){}})();`;
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${GeistSans.variable} ${GeistMono.variable} h-full antialiased`}
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: noFlashScript }} />
+      </head>
       <body className="min-h-full">
         {children}
         <ServiceWorkerRegister />

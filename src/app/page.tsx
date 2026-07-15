@@ -17,6 +17,7 @@ import RoomGrid from "@/components/RoomGrid";
 import VenueDetail from "@/components/VenueDetail";
 import FeedbackModal from "@/components/FeedbackModal";
 import AcknowledgementModal from "@/components/AcknowledgementModal";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const MapView = dynamic(() => import("@/components/MapView"), {
   ssr: false,
@@ -242,22 +243,25 @@ export default function Home() {
             </div>
           </div>
           <div className="flex flex-col items-end gap-0.5">
-            <button
-              onClick={() => setFeedbackOpen(true)}
-              aria-label="Send feedback"
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-white/20 sm:px-2.5"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path
-                  d="M21 11.5a8.38 8.38 0 01-8.5 8.5 8.5 8.5 0 01-3.8-.9L3 21l1.9-5.7A8.38 8.38 0 014 11.5 8.5 8.5 0 0112.5 3 8.38 8.38 0 0121 11.5z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span className="hidden min-[400px]:inline">Feedback</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              <ThemeToggle />
+              <button
+                onClick={() => setFeedbackOpen(true)}
+                aria-label="Send feedback"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-white/20 sm:px-2.5"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path
+                    d="M21 11.5a8.38 8.38 0 01-8.5 8.5 8.5 8.5 0 01-3.8-.9L3 21l1.9-5.7A8.38 8.38 0 014 11.5 8.5 8.5 0 0112.5 3 8.38 8.38 0 0121 11.5z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span className="hidden min-[400px]:inline">Feedback</span>
+              </button>
+            </div>
             <span className="whitespace-nowrap font-mono text-xs font-medium tabular-nums text-white/60">
               {clockMounted
                 ? now.toLocaleTimeString("en-SG", {

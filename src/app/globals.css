@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Class-based dark mode: the `dark:` variant and our scoped overrides below
+   activate when <html> (or any ancestor) carries the `.dark` class, which the
+   no-flash script in layout.tsx sets from the saved preference or the OS
+   setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --color-nus-blue: #003D7C;
   --color-nus-orange: #EF7C00;
@@ -42,3 +48,111 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* ============================================================================
+   Dark theme
+   ----------------------------------------------------------------------------
+   Designed around surface *elevation* (progressively lighter neutral surfaces)
+   rather than a tinted color-invert, per dark-mode-design guidance:
+     - base background: darkest, near-neutral (a whisper of cool blue), so the
+       glass surfaces read as clean, uniform panels instead of muddy tints
+     - cards / panels: surface-1, a step lighter and mostly opaque
+     - dropdowns / sticky columns: surface-2, lighter still
+     - text: off-white, not pure white; borders: low-opacity white
+     - accents desaturated so they don't glare on the dark ground
+   Remapped in one place (unlayered, so these win over Tailwind utilities and
+   apply only under `.dark`). Accents that already read fine on dark
+   (nus-orange, status dots, white button text, the brand header) are left be.
+   ========================================================================== */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  /* Near-flat neutral dark with only a faint cool glow at the top — a strong
+     radial glow was what made the earlier surfaces look muddy/uneven. */
+  background:
+    radial-gradient(1000px 480px at 50% -12%, rgba(70, 116, 178, 0.08), transparent 60%),
+    #0f141c;
+  color: #e4e7ec;
+}
+
+/* Surface-1: cards & panels. Mostly opaque so every card is a clean, uniform
+   step above the background (elevation via lightness, not shadow tint). */
+.dark .glass {
+  background: rgba(25, 31, 42, 0.9);
+  border-color: rgba(255, 255, 255, 0.09);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Neutral text — off-white ramp, tuned for >=4.5:1 on the surfaces above. */
+.dark .text-zinc-800 { color: #e6e9ee; }
+.dark .text-zinc-700 { color: #d3d9e0; }
+.dark .text-zinc-600 { color: #bac1cb; }
+.dark .text-zinc-500 { color: #99a2ae; }
+.dark .text-zinc-400 { color: #7e8794; }
+.dark .text-zinc-300 { color: #626b78; }
+
+/* nus-blue is a dark navy — unreadable on dark. Lift to a slightly desaturated
+   sky blue; opacity variants (timetable labels) get matching treatment. */
+.dark .text-nus-blue { color: #7fb1e6; }
+.dark .text-nus-blue\/70 { color: rgba(127, 177, 230, 0.80); }
+.dark .text-nus-blue\/50 { color: rgba(127, 177, 230, 0.60); }
+.dark .hover\:text-nus-blue:hover { color: #7fb1e6; }
+
+/* Timetable "scheduled another week" reference blocks: on light mode these are
+   a faint navy dashed outline; on dark that vanished into the background, so
+   lift the dashed border + fill to the same sky blue at low alpha. */
+.dark .border-nus-blue\/40 { border-color: rgba(127, 177, 230, 0.50); }
+.dark .bg-nus-blue\/5 { background-color: rgba(127, 177, 230, 0.09); }
+.dark .bg-nus-blue\/10 { background-color: rgba(127, 177, 230, 0.16); }
+
+/* Surface-2: elevated over cards (dropdown/suggestions, sticky columns,
+   selected-class bar). Lighter than surface-1 so they read as "on top". */
+.dark .bg-white { background-color: #212a3a; }
+.dark .bg-white\/95 { background-color: rgba(27, 34, 47, 0.97); }
+.dark .bg-white\/80 { background-color: rgba(30, 38, 52, 0.9); }
+/* Translucent neutral fills (pills, inputs, panel insets) */
+.dark .bg-white\/60 { background-color: rgba(255, 255, 255, 0.055); }
+.dark .bg-white\/40 { background-color: rgba(255, 255, 255, 0.04); }
+.dark .bg-white\/10 { background-color: rgba(255, 255, 255, 0.10); }
+.dark .bg-zinc-100 { background-color: rgba(255, 255, 255, 0.08); }
+.dark .bg-zinc-300, .dark .bg-zinc-300\/80 { background-color: rgba(255, 255, 255, 0.22); }
+.dark .hover\:bg-zinc-100:hover { background-color: rgba(255, 255, 255, 0.10); }
+
+/* Skeleton-shimmer bars */
+.dark .bg-zinc-200\/80 { background-color: rgba(255, 255, 255, 0.09); }
+.dark .bg-zinc-200\/70 { background-color: rgba(255, 255, 255, 0.08); }
+.dark .bg-zinc-200\/60 { background-color: rgba(255, 255, 255, 0.06); }
+.dark .bg-zinc-200\/50 { background-color: rgba(255, 255, 255, 0.05); }
+
+/* Neutral borders */
+.dark .border-zinc-200 { border-color: rgba(255, 255, 255, 0.10); }
+.dark .border-zinc-200\/70 { border-color: rgba(255, 255, 255, 0.08); }
+.dark .border-zinc-200\/60 { border-color: rgba(255, 255, 255, 0.08); }
+.dark .border-zinc-100 { border-color: rgba(255, 255, 255, 0.06); }
+
+/* Placeholder */
+.dark .placeholder-zinc-400::placeholder { color: #6b7280; }
+
+/* Timetable hour banding + "dim past hours" wash need inverting on dark */
+.dark .bg-zinc-500\/\[0\.05\] { background-color: rgba(255, 255, 255, 0.045); }
+.dark .bg-zinc-900\/\[0\.04\] { background-color: rgba(0, 0, 0, 0.28); }
+
+/* Status pills / banners / free-text — remap the light -50/-200/-700 ramps to
+   translucent, slightly desaturated dark equivalents. */
+.dark .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.15); }
+.dark .text-emerald-700 { color: #6ee7b7; }
+.dark .text-emerald-600 { color: #4ade9e; }
+.dark .border-emerald-200 { border-color: rgba(16, 185, 129, 0.34); }
+.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.15); }
+.dark .text-red-700 { color: #fca5a5; }
+.dark .text-red-600 { color: #f87171; }
+.dark .border-red-200 { border-color: rgba(239, 68, 68, 0.34); }
+.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.13); }
+.dark .text-amber-800 { color: #f6c454; }
+.dark .text-amber-700 { color: #f0b429; }
+.dark .text-amber-600 { color: #f0b429; }
+.dark .border-amber-200 { border-color: rgba(245, 158, 11, 0.30); }
