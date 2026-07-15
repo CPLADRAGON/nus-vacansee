@@ -1,9 +1,25 @@
 import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
+import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
 import { GeistMono } from "geist/font/mono";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+
+// Concept E "Editorial Signal" type system: a characterful grotesque display
+// face for the wordmark/headings, a refined grotesque for body, and Geist Mono
+// for all data (room codes, times).
+const display = Bricolage_Grotesque({
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
+  variable: "--ff-display",
+  display: "swap",
+});
+const body = Hanken_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--ff-body",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "NUS Vacansee",
@@ -44,7 +60,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${GeistSans.variable} ${GeistMono.variable} h-full antialiased`}
+      className={`${body.variable} ${display.variable} ${GeistMono.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: noFlashScript }} />

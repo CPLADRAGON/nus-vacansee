@@ -43,7 +43,7 @@ export default function ThemeToggle() {
     <button
       onClick={toggle}
       aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-      className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white transition-colors hover:bg-white/20"
+      className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-500 transition-colors hover:border-nus-blue hover:text-nus-blue"
     >
       {/* Render the icon only after mount so the SSR/client markup matches
           (the correct theme isn't known during SSR). */}

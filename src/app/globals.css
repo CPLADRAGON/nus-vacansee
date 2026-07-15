@@ -18,35 +18,52 @@
   --color-glass-bg: rgba(255, 255, 255, 0.75);
   --color-glass-border: rgba(255, 255, 255, 0.4);
 
-  --font-sans: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --font-sans: var(--ff-body), system-ui, -apple-system, sans-serif;
+  --font-display: var(--ff-display), var(--ff-body), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), SFMono-Regular, ui-monospace, monospace;
 }
 
 .glass {
-  background: var(--color-glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--color-glass-border);
-  border-radius: 14px;
-  /* Layered soft shadow reads far more premium than a single faint blur. */
+  /* Concept E "Editorial Signal": solid surfaces with a hairline border and a
+     sharp small radius, not frosted glass — reads as considered and premium.
+     (Class name kept for continuity across the codebase.) */
+  background: #ffffff;
+  border: 1px solid #e6e8ee;
+  border-radius: 8px;
   box-shadow:
     0 1px 2px rgba(16, 24, 40, 0.04),
-    0 6px 20px rgba(16, 24, 40, 0.06);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+    0 10px 26px rgba(20, 30, 50, 0.06);
+  transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
 }
 
 body {
-  /* Subtle NUS-blue-tinted depth behind the glassmorphic surfaces, instead of
-     a flat grey. The radial glow sits under the header; the vertical gradient
-     gives the page a soft top-to-bottom falloff. */
-  background:
-    radial-gradient(1100px 520px at 50% -8%, rgba(0, 61, 124, 0.07), transparent 62%),
-    linear-gradient(180deg, #f7f9fc 0%, #eef2f7 100%);
-  background-attachment: fixed;
+  /* Cool paper with a faint engineered dot-grid — atmosphere without warmth. */
+  background-color: #f6f7f9;
+  background-image: radial-gradient(circle at 1px 1px, rgba(22, 26, 33, 0.045) 1px, transparent 0);
+  background-size: 22px 22px;
+  color: #161a21;
   font-family: var(--font-sans);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Signature brand thread: a thin blue-to-orange rule at the very top of the page. */
+.brand-thread {
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-nus-blue) 0 55%, var(--color-nus-orange));
+}
+
+/* Editorial header surface (light + dark) */
+.app-header {
+  background: rgba(246, 247, 249, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e6e8ee;
+}
+.dark .app-header {
+  background: rgba(14, 17, 22, 0.72);
+  border-bottom-color: rgba(255, 255, 255, 0.09);
 }
 
 /* ============================================================================
@@ -69,22 +86,20 @@ body {
 }
 
 .dark body {
-  /* Near-flat neutral dark with only a faint cool glow at the top — a strong
-     radial glow was what made the earlier surfaces look muddy/uneven. */
-  background:
-    radial-gradient(1000px 480px at 50% -12%, rgba(70, 116, 178, 0.08), transparent 60%),
-    #0f141c;
+  /* Deep editorial ink with the same faint dot-grid, in white at low alpha. */
+  background-color: #0e1116;
+  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.035) 1px, transparent 0);
+  background-size: 22px 22px;
   color: #e4e7ec;
 }
 
-/* Surface-1: cards & panels. Mostly opaque so every card is a clean, uniform
-   step above the background (elevation via lightness, not shadow tint). */
+/* Surface-1: cards & panels — a clean, mostly-opaque step above the ink base. */
 .dark .glass {
-  background: rgba(25, 31, 42, 0.9);
+  background: #161a21;
   border-color: rgba(255, 255, 255, 0.09);
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.5),
-    0 8px 24px rgba(0, 0, 0, 0.5);
+    0 10px 26px rgba(0, 0, 0, 0.5);
 }
 
 /* Neutral text — off-white ramp, tuned for >=4.5:1 on the surfaces above. */
