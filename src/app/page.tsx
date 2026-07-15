@@ -225,12 +225,12 @@ export default function Home() {
   return (
     <>
       {/* Brand banner */}
-      <header className="sticky top-0 z-40 border-b border-nus-orange/40 bg-nus-blue shadow-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-2.5">
+      <header className="sticky top-0 z-40 border-b border-nus-orange/40 bg-gradient-to-r from-nus-blue to-[#00509e] shadow-sm pt-[env(safe-area-inset-top)]">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2.5">
           <div className="flex items-center gap-2">
             <span className="inline-block h-8 w-1.5 shrink-0 rounded-full bg-nus-orange" />
             <div className="flex flex-col leading-tight">
-              <h1 className="text-lg font-bold tracking-tight text-white">
+              <h1 className="text-lg font-bold tracking-[-0.02em] text-white sm:text-xl">
                 NUS <span className="text-nus-orange">Vacansee</span>
               </h1>
               <span
@@ -271,12 +271,22 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-4">
-        {/* Loading state */}
+      <main className="mx-auto max-w-6xl px-4 py-4">
+        {/* Loading state — skeleton cards give a better sense of progress than
+            a lone spinner, on both phone and desktop. */}
         {loading && (
-          <div className="glass py-12 text-center">
-            <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-nus-blue border-t-transparent" />
-            <p className="text-sm text-zinc-500">Loading live venue data…</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="glass animate-pulse p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="h-5 w-24 rounded bg-zinc-200/80" />
+                  <div className="h-4 w-10 rounded bg-zinc-200/60" />
+                </div>
+                <div className="mb-3 h-4 w-20 rounded-full bg-zinc-200/60" />
+                <div className="mb-2 h-5 w-24 rounded-full bg-zinc-200/70" />
+                <div className="h-4 w-32 rounded bg-zinc-200/50" />
+              </div>
+            ))}
           </div>
         )}
 

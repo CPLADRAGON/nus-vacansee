@@ -149,13 +149,15 @@ export default function VenueDetail({
       onClick={onClose}
     >
       <div
-        className="glass w-full max-w-lg rounded-t-2xl sm:max-w-2xl sm:rounded-2xl lg:max-w-4xl max-h-[85vh] overflow-y-auto p-5"
+        className="glass w-full max-w-lg rounded-t-2xl sm:max-w-2xl sm:rounded-2xl lg:max-w-4xl max-h-[85vh] overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:pb-5"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Bottom-sheet drag affordance (phone only) */}
+        <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-zinc-300/80 sm:hidden" />
         {/* Header */}
         <div className="mb-4 flex items-start justify-between">
           <div>
-            <h2 className="font-mono text-2xl font-bold text-nus-blue">
+            <h2 className="font-mono text-2xl font-bold tracking-[-0.02em] text-nus-blue">
               {venue}
             </h2>
             {entry.roomName && (

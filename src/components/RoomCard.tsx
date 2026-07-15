@@ -49,10 +49,10 @@ export default function RoomCard({
     <div className="relative">
       <button
         onClick={() => onSelect(venue, entry)}
-        className={`glass relative w-full overflow-hidden p-4 text-left transition-transform duration-200 hover:scale-[1.02] hover:shadow-md cursor-pointer before:absolute before:inset-y-0 before:left-0 before:w-1 ${ACCENT[occupancy.status]}`}
+        className={`glass relative w-full overflow-hidden p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer before:absolute before:inset-y-0 before:left-0 before:w-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nus-blue/40 ${ACCENT[occupancy.status]}`}
       >
         <div className="mb-2 flex items-start justify-between gap-2">
-          <span className="font-mono text-xl font-bold tracking-tight text-nus-blue">
+          <span className="font-mono text-xl font-bold tracking-[-0.02em] text-nus-blue">
             {venue}
           </span>
           <span className="mr-7 whitespace-nowrap rounded bg-zinc-100 px-2 py-0.5 font-mono text-xs text-zinc-500">
