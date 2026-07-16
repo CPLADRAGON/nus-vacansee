@@ -105,6 +105,17 @@ export default function VenueDetail({
     };
   }, [venue]);
 
+  // Lock background page scroll while the detail modal is open, so scrolling
+  // the sheet to its end can't chain-scroll the page behind it (the modal
+  // only renders while a venue is selected, so mount/unmount == open/close).
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
   const reportSummary = useMemo(() => summarizeReports(reports ?? undefined), [reports]);
 
   // The report value that matches the currently-displayed status (what a
@@ -149,7 +160,7 @@ export default function VenueDetail({
       onClick={onClose}
     >
       <div
-        className="glass w-full max-w-lg rounded-t-2xl sm:max-w-2xl sm:rounded-2xl lg:max-w-4xl max-h-[85vh] overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:pb-5"
+        className="glass w-full max-w-lg rounded-t-2xl sm:max-w-2xl sm:rounded-2xl lg:max-w-4xl max-h-[85vh] overflow-y-auto overscroll-contain p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:pb-5"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Bottom-sheet drag affordance (phone only) */}
