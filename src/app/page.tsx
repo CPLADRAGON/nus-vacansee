@@ -72,6 +72,33 @@ export default function Home() {
     [pushRecent]
   );
 
+  // Shareable venue links: capture any ?venue= from the initial URL once, then
+  // open that room's detail as soon as the venue data is available.
+  const initialVenueParam = useRef<string | null>(
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("venue")
+      : null
+  );
+  const deepLinkHandled = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandled.current || venues.length === 0) return;
+    deepLinkHandled.current = true;
+    const code = initialVenueParam.current;
+    if (!code) return;
+    const match = venues.find(([c]) => c.toUpperCase() === code.toUpperCase());
+    if (match) openDetail(match[0], match[1]);
+  }, [venues, openDetail]);
+
+  // Keep the URL's ?venue= in sync with the open detail modal (no navigation,
+  // no scroll jump) so the address bar is always shareable and back-friendly.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (detailVenue) url.searchParams.set("venue", detailVenue[0]);
+    else url.searchParams.delete("venue");
+    window.history.replaceState(null, "", url.toString());
+  }, [detailVenue]);
+
   // Live clock tick
   useEffect(() => {
     setClockMounted(true);

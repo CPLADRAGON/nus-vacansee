@@ -71,6 +71,7 @@ export default function VenueDetail({
   // Which flow produced the current "Thanks..." message, so the copy can
   // differ between confirming ("Yes") and correcting ("No" -> alternative).
   const [lastAction, setLastAction] = useState<"confirm" | "correct" | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -154,6 +155,17 @@ export default function VenueDetail({
 
   const dest = getDestination(venue, entry);
 
+  const handleCopyLink = async () => {
+    try {
+      const url = `${window.location.origin}/?venue=${encodeURIComponent(venue)}`;
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 1800);
+    } catch {
+      /* clipboard unavailable — ignore */
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 backdrop-blur-sm"
@@ -191,6 +203,21 @@ export default function VenueDetail({
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              onClick={handleCopyLink}
+              aria-label={linkCopied ? "Link copied" : "Copy link to this room"}
+              className="rounded-full p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-nus-blue"
+            >
+              {linkCopied ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M20 6L9 17l-5-5" stroke="#0e9f6e" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M9 15l6-6M11 6l1-1a4 4 0 0 1 6 6l-1 1M13 18l-1 1a4 4 0 0 1-6-6l1-1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </button>
             {onToggleFavorite && (
               <button
                 onClick={() => onToggleFavorite(venue)}
