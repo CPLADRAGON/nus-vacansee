@@ -48,6 +48,7 @@ const HARDCODED_PILLS = [
   { id: null, label: "Near me" },
   { id: "Computing", label: "COM" },
   { id: "Engineering", label: "ENG" },
+  { id: "Science", label: "SCI" },
   { id: "UTown", label: "UTown" },
   { id: "FASS", label: "FASS" },
   { id: "Business", label: "BIZ" },
