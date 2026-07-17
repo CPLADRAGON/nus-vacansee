@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import type { VenueEntry } from "@/types";
 import { useVenueData } from "@/hooks/useVenueData";
 import { useGeolocation } from "@/hooks/useGeolocation";
-import { computeOccupancy, getSingaporeTime } from "@/lib/occupancy-engine";
+import { computeOccupancy, getSingaporeTime, formatTime } from "@/lib/occupancy-engine";
 import { getCurrentSemester, getCurrentWeek, getPeriodLabel, getHeaderPeriodLabel } from "@/lib/calendar";
 import { findNearestCluster, venueDistance } from "@/lib/cluster-map";
 import { clearCache } from "@/lib/venue-cache";
@@ -39,6 +39,9 @@ export default function Home() {
   const { push: pushRecent } = useRecents();
 
   const [now, setNow] = useState<Date>(() => getSingaporeTime());
+  // Plan-ahead time: when set, availability is computed as-of this time today
+  // instead of the live clock ("what's free at 2 PM?"). null = live / Now.
+  const [planTime, setPlanTime] = useState<Date | null>(null);
   const [cluster, setCluster] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [roomType, setRoomType] = useState<RoomType | null>(null);
@@ -145,19 +148,41 @@ export default function Home() {
 
   const semester = useMemo(() => getCurrentSemester(now), [now]);
   const periodLabel = useMemo(() => getPeriodLabel(now), [now]);
+
+  // The time availability is computed against: the plan-ahead time if set,
+  // otherwise the live clock.
+  const effectiveNow = planTime ?? now;
+  const planHHMM = planTime
+    ? `${String(planTime.getHours()).padStart(2, "0")}${String(planTime.getMinutes()).padStart(2, "0")}`
+    : "";
+  const planInputValue = planTime
+    ? `${String(planTime.getHours()).padStart(2, "0")}:${String(planTime.getMinutes()).padStart(2, "0")}`
+    : "";
+  const setPlanFromInput = (value: string) => {
+    if (!value) {
+      setPlanTime(null);
+      return;
+    }
+    const [h, m] = value.split(":").map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) return;
+    const t = new Date(now);
+    t.setHours(h, m, 0, 0);
+    setPlanTime(t);
+  };
   const headerLabelFull = useMemo(() => getHeaderPeriodLabel(now, false), [now]);
   const inTeachingWeek = useMemo(() => getCurrentWeek(now) > 0, [now]);
   const inSpecialTerm = semester?.semester === 3 || semester?.semester === 4;
 
-  // Occupancy for every venue at the current tick.
+  // Occupancy for every venue at the effective time (live clock, or the
+  // plan-ahead time when the user is checking "what's free at 2 PM?").
   const withOccupancy = useMemo(
     () =>
       venues.map(([code, entry]) => ({
         code,
         entry,
-        occ: computeOccupancy(entry, now, semester),
+        occ: computeOccupancy(entry, effectiveNow, semester),
       })),
-    [venues, now, semester]
+    [venues, effectiveNow, semester]
   );
 
   // Browse mode (a cluster pill, search query, the saved filter, or all-venues).
@@ -394,6 +419,53 @@ export default function Home() {
               geoLoading={geo.loading}
             />
 
+            {/* Plan-ahead time picker: "what's free at 2 PM?" */}
+            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-zinc-400">
+                Free at
+              </span>
+              <div className="inline-flex rounded-full border border-zinc-200 bg-white/60 p-0.5 text-xs font-medium">
+                <button
+                  onClick={() => setPlanTime(null)}
+                  className={`rounded-full px-3 py-1 transition-colors ${
+                    planTime === null ? "bg-nus-blue text-white" : "text-zinc-500 hover:text-nus-blue"
+                  }`}
+                >
+                  Now
+                </button>
+                <button
+                  onClick={() => setPlanTime(new Date(effectiveNow.getTime() + 3600_000))}
+                  className="rounded-full px-3 py-1 text-zinc-500 transition-colors hover:text-nus-blue"
+                >
+                  +1h
+                </button>
+                <button
+                  onClick={() => setPlanTime(new Date(effectiveNow.getTime() + 7200_000))}
+                  className="rounded-full px-3 py-1 text-zinc-500 transition-colors hover:text-nus-blue"
+                >
+                  +2h
+                </button>
+              </div>
+              <input
+                type="time"
+                aria-label="Check availability at a specific time"
+                value={planInputValue}
+                onChange={(e) => setPlanFromInput(e.target.value)}
+                className="rounded-lg border border-zinc-200 bg-white/60 px-2.5 py-1 font-mono text-xs text-zinc-700 outline-none transition-colors focus:border-nus-blue focus:ring-2 focus:ring-nus-blue/20"
+              />
+              {planTime && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-nus-blue">
+                  <span className="font-medium">at {formatTime(planHHMM)}</span>
+                  <button
+                    onClick={() => setPlanTime(null)}
+                    className="font-medium underline underline-offset-2 hover:text-nus-blue/80"
+                  >
+                    back to now
+                  </button>
+                </span>
+              )}
+            </div>
+
             {/* View toggle */}
             <div className="mt-4 flex justify-end">
               <div className="inline-flex rounded-full border border-zinc-200 bg-white/60 p-0.5 text-xs font-medium">
@@ -436,7 +508,7 @@ export default function Home() {
                   </p>
                   <RoomGrid
                     venues={filtered.map((v) => [v.code, v.entry])}
-                    now={now}
+                    now={effectiveNow}
                     semester={semester}
                     userLoc={userLoc}
                     isFavorite={isFavorite}
@@ -472,7 +544,7 @@ export default function Home() {
                   <div className="mb-3 flex items-end justify-between gap-2">
                     <div>
                       <h2 className="font-display text-xl font-bold tracking-[-0.02em] text-zinc-800">
-                        Available now near you
+                        {planTime ? `Free at ${formatTime(planHHMM)} near you` : "Available now near you"}
                       </h2>
                       <p className="text-xs text-zinc-500">
                         {detectedCluster
@@ -486,7 +558,7 @@ export default function Home() {
 
                   <RoomGrid
                     venues={nearShown.map((v) => [v.code, v.entry])}
-                    now={now}
+                    now={effectiveNow}
                     semester={semester}
                     userLoc={userLoc}
                     isFavorite={isFavorite}
