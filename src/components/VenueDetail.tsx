@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { VenueEntry, CalendarEntry } from "@/types";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { computeOccupancy, formatTime, formatRelativeTime } from "@/lib/occupancy-engine";
 import { getDestination, mapsUrl } from "@/lib/directions";
 import {
@@ -154,6 +155,7 @@ export default function VenueDetail({
     typeof entry.lat === "number" && typeof entry.lng === "number";
 
   const dest = getDestination(venue, entry);
+  const dialogRef = useModalA11y<HTMLDivElement>(onClose);
 
   const handleCopyLink = async () => {
     try {
@@ -172,7 +174,12 @@ export default function VenueDetail({
       onClick={onClose}
     >
       <div
-        className="glass w-full max-w-lg rounded-t-2xl sm:max-w-2xl sm:rounded-2xl lg:max-w-4xl max-h-[85vh] overflow-y-auto overscroll-contain p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:pb-5"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${venue} room details`}
+        tabIndex={-1}
+        className="glass w-full max-w-lg rounded-t-2xl sm:max-w-2xl sm:rounded-2xl lg:max-w-4xl max-h-[85vh] overflow-y-auto overscroll-contain p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] outline-none sm:pb-5"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Bottom-sheet drag affordance (phone only) */}
@@ -240,6 +247,7 @@ export default function VenueDetail({
             )}
             <button
               onClick={onClose}
+              aria-label="Close"
               className="rounded-full p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">

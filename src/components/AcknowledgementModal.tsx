@@ -1,5 +1,7 @@
 "use client";
 
+import { useModalA11y } from "@/hooks/useModalA11y";
+
 const PROFILE_URL = "https://github.com/CPLADRAGON";
 const REPO_URL = "https://github.com/CPLADRAGON/nus-vacansee";
 
@@ -36,13 +38,19 @@ function GitHubIcon() {
 }
 
 export default function AcknowledgementModal({ onClose }: { onClose: () => void }) {
+  const dialogRef = useModalA11y<HTMLDivElement>(onClose);
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 backdrop-blur-sm sm:items-center"
       onClick={onClose}
     >
       <div
-        className="glass max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-2xl p-5 sm:rounded-2xl"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Acknowledgements"
+        tabIndex={-1}
+        className="glass max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-2xl p-5 outline-none sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

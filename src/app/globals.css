@@ -54,6 +54,20 @@ body {
   background: linear-gradient(90deg, var(--color-nus-blue) 0 55%, var(--color-nus-orange));
 }
 
+/* Accessibility: Tailwind's zinc-400 (#a1a1aa) on white is ~2.6:1 and fails
+   WCAG AA for the small informational meta text it's used for throughout.
+   Darken it to zinc-500 (~4.6:1) in light mode. The dark-theme override below
+   is more specific, so dark mode keeps its own tuned value. */
+.text-zinc-400 {
+  color: #71717a;
+}
+
+/* emerald-600 status/"free" text is ~3.65:1 on white; emerald-700 (~5.3:1)
+   passes AA and still reads clearly green. */
+.text-emerald-600 {
+  color: #047857;
+}
+
 /* Editorial header surface (light + dark) */
 .app-header {
   background: rgba(246, 247, 249, 0.82);
@@ -64,6 +78,22 @@ body {
 .dark .app-header {
   background: rgba(14, 17, 22, 0.72);
   border-bottom-color: rgba(255, 255, 255, 0.09);
+}
+
+/* Respect users who prefer reduced motion: neutralize the hover-lift and
+   other transform/transition motion while keeping instant state changes. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .glass:hover {
+    transform: none !important;
+  }
 }
 
 /* ============================================================================
