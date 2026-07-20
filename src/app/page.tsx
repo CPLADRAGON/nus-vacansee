@@ -18,6 +18,7 @@ import VenueDetail from "@/components/VenueDetail";
 import FeedbackModal from "@/components/FeedbackModal";
 import AcknowledgementModal from "@/components/AcknowledgementModal";
 import ThemeToggle from "@/components/ThemeToggle";
+import OnboardingTip from "@/components/OnboardingTip";
 
 const MapView = dynamic(() => import("@/components/MapView"), {
   ssr: false,
@@ -366,6 +367,7 @@ export default function Home() {
         {/* Main UI (loaded) */}
         {!loading && !error && (
           <>
+            <OnboardingTip />
             {/* Non-teaching-period banner */}
             {!inTeachingWeek && !inSpecialTerm && (
               <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
