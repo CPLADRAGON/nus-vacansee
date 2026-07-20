@@ -22,6 +22,7 @@ const body = Hanken_Grotesk({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://nus-vacansee.vercel.app"),
   title: "NUS Vacansee",
   description:
     "Find your free room nearby — real-time room availability on NUS campus.",
@@ -31,6 +32,29 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Vacansee",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "NUS Vacansee",
+    title: "NUS Vacansee — find a free room near you",
+    description:
+      "Real-time room availability on NUS campus. Find a vacant room nearby now, or check what's free at 2 PM.",
+    url: "https://nus-vacansee.vercel.app",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "NUS Vacansee — real-time room availability on NUS campus",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "NUS Vacansee — find a free room near you",
+    description:
+      "Real-time room availability on NUS campus. Find a vacant room nearby now, or check what's free at 2 PM.",
+    images: ["/og.png"],
   },
   icons: {
     icon: [
