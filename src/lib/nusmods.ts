@@ -11,6 +11,15 @@ const API_BASE = "https://api.nusmods.com/v2";
 const VENUE_LOCATIONS_URL =
   "https://raw.githubusercontent.com/nusmodifications/nusmods/master/website/src/data/venues.json";
 
+// Identify this app on outbound requests to NUSMods/GitHub as a courtesy to the
+// API maintainers (responsible-use etiquette). Only takes effect server-side
+// (in the daily cron); browsers treat User-Agent as a forbidden header and
+// silently ignore it, so the Tier-1 client fallback is unaffected.
+const REQUEST_HEADERS = {
+  "User-Agent":
+    "NUS-Vacansee/1.0 (+https://github.com/CPLADRAGON/nus-vacansee; independent student project)",
+};
+
 // --- Raw NUSMods venueInformation.json shapes ------------------------------
 
 type RawWeeks =
@@ -198,7 +207,7 @@ async function fetchSemester(
   semester: number
 ): Promise<RawVenueInfo> {
   const url = `${API_BASE}/${acadYear}/semesters/${semester}/venueInformation.json`;
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(url, { cache: "no-store", headers: REQUEST_HEADERS });
   if (!res.ok) throw new Error(`NUSMods HTTP ${res.status} (sem ${semester})`);
   return (await res.json()) as RawVenueInfo;
 }
@@ -220,7 +229,7 @@ interface VenueLocation {
 async function fetchVenueLocations(): Promise<Record<string, VenueLocation>> {
   const out: Record<string, VenueLocation> = {};
   try {
-    const res = await fetch(VENUE_LOCATIONS_URL);
+    const res = await fetch(VENUE_LOCATIONS_URL, { headers: REQUEST_HEADERS });
     if (!res.ok) return out;
     const raw = (await res.json()) as Record<string, RawVenueLocation>;
     for (const [code, v] of Object.entries(raw)) {
